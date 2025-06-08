@@ -84,11 +84,6 @@ export function Sidebar() {
           }
           ${!isExpanded ? "justify-center" : ""}
         `}>
-        {/* Indicador ativo */}
-        {isActive && (
-          <div className='absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-gradient-to-b from-purple-300 to-pink-300 rounded-r-full shadow-sm' />
-        )}
-
         <item.icon
           className={`
             flex-shrink-0 h-5 w-5 transition-colors
