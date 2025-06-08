@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HomeIcon, FolderIcon, ClipboardDocumentListIcon, Cog6ToothIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, FolderIcon, ClipboardDocumentListIcon } from "@heroicons/react/24/outline";
 
 const navigation = [
-  { name: "Dashboard", href: "/workspaces", icon: HomeIcon },
+  { name: "Dashboard", href: "/", icon: HomeIcon },
   { name: "Workspaces", href: "/workspaces", icon: FolderIcon },
   { name: "Projetos", href: "/projects", icon: ClipboardDocumentListIcon },
   { name: "Tarefas", href: "/tasks", icon: ClipboardDocumentListIcon },
