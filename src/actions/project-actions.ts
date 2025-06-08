@@ -111,7 +111,7 @@ export async function updateProject(prevState: any, formData: FormData) {
   }
 }
 
-export async function deleteProject(projectId: string) {
+export async function deleteProject(projectId: string): Promise<void> {
   const user = await getCurrentUser();
   if (!user) {
     redirect("/login");
@@ -123,7 +123,6 @@ export async function deleteProject(projectId: string) {
     });
 
     revalidatePath("/projects");
-    return { success: true };
   } catch (error) {
     throw new Error("Erro ao deletar projeto");
   }

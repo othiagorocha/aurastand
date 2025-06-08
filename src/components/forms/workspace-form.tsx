@@ -18,8 +18,10 @@ function SubmitButton() {
   );
 }
 
+const initialState: WorkspaceFormState = {};
+
 export function CreateWorkspaceForm() {
-  const [state, formAction] = useFormState<WorkspaceFormState, FormData>(createWorkspace, undefined);
+  const [state, formAction] = useFormState<WorkspaceFormState, FormData>(createWorkspace, initialState);
 
   return (
     <form action={formAction} className='space-y-4'>

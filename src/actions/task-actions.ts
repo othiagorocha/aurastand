@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
+import { getErrorMessage } from "@/lib/handle-error";
 
 const createTaskSchema = z.object({
   title: z.string().min(1, "Título é obrigatório"),
@@ -61,6 +62,7 @@ export async function createTask(prevState: any, formData: FormData) {
     revalidatePath(`/projects/${projectId}`);
     return { success: true, task };
   } catch (error) {
+    console.error(getErrorMessage(error));
     return {
       errors: {
         _form: ["Erro ao criar tarefa"],
@@ -107,6 +109,7 @@ export async function updateTask(prevState: any, formData: FormData) {
     revalidatePath("/tasks");
     return { success: true };
   } catch (error) {
+    console.error(getErrorMessage(error));
     return {
       errors: {
         _form: ["Erro ao atualizar tarefa"],
@@ -115,7 +118,7 @@ export async function updateTask(prevState: any, formData: FormData) {
   }
 }
 
-export async function updateTaskStatus(taskId: string, status: "TODO" | "IN_PROGRESS" | "IN_REVIEW" | "DONE") {
+export async function updateTaskStatus(taskId: string, status: "TODO" | "IN_PROGRESS" | "IN_REVIEW" | "DONE"): Promise<void> {
   const user = await getCurrentUser();
   if (!user) {
     redirect("/login");
@@ -128,13 +131,13 @@ export async function updateTaskStatus(taskId: string, status: "TODO" | "IN_PROG
     });
 
     revalidatePath("/tasks");
-    return { success: true };
   } catch (error) {
+    console.error(getErrorMessage(error));
     throw new Error("Erro ao atualizar status da tarefa");
   }
 }
 
-export async function deleteTask(taskId: string) {
+export async function deleteTask(taskId: string): Promise<void> {
   const user = await getCurrentUser();
   if (!user) {
     redirect("/login");
@@ -146,8 +149,8 @@ export async function deleteTask(taskId: string) {
     });
 
     revalidatePath("/tasks");
-    return { success: true };
   } catch (error) {
+    console.error(getErrorMessage(error));
     throw new Error("Erro ao deletar tarefa");
   }
 }
