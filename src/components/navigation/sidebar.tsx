@@ -7,10 +7,11 @@ import {
   HomeIcon,
   FolderIcon,
   ClipboardDocumentListIcon,
-  ChevronLeftIcon,
   ChevronRightIcon,
   SparklesIcon,
+  CogIcon,
 } from "@heroicons/react/24/outline";
+import { SidebarSkeleton } from "./sidebar-skeleton";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: HomeIcon },
@@ -19,31 +20,34 @@ const navigation = [
   { name: "Tarefas", href: "/tasks", icon: ClipboardDocumentListIcon },
 ];
 
+type SidebarMode = "expanded" | "collapsed" | "expand-on-hover";
+
 export function Sidebar() {
   const pathname = usePathname();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [mode, setMode] = useState<SidebarMode>("expanded");
   const [isHovered, setIsHovered] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [showControls, setShowControls] = useState(false);
 
   // Aguarda a hidratação antes de carregar do localStorage
   useEffect(() => {
     setMounted(true);
-    const savedState = localStorage.getItem("sidebar-collapsed");
-    if (savedState) {
-      setIsCollapsed(savedState === "true");
+    const savedMode = localStorage.getItem("sidebar-mode") as SidebarMode;
+    if (savedMode && ["expanded", "collapsed", "expand-on-hover"].includes(savedMode)) {
+      setMode(savedMode);
     }
   }, []);
 
   // Salva o estado no localStorage apenas após montar
   useEffect(() => {
     if (mounted) {
-      localStorage.setItem("sidebar-collapsed", isCollapsed.toString());
+      localStorage.setItem("sidebar-mode", mode);
     }
-  }, [isCollapsed, mounted]);
+  }, [mode, mounted]);
 
   // Determina se a sidebar deve estar expandida
-  const isExpanded = !isCollapsed || isHovered;
+  const isExpanded = mode === "expanded" || (mode === "expand-on-hover" && isHovered);
 
   // Função para verificar se o link está ativo (incluindo subníveis)
   const isLinkActive = useCallback(
@@ -56,41 +60,33 @@ export function Sidebar() {
     [pathname]
   );
 
-  // Função para alternar o estado fixo da sidebar
-  const toggleCollapsed = useCallback(() => {
-    setIsCollapsed((prev) => !prev);
-  }, []);
-
   // Handlers de mouse com debounce para evitar o piscar
   const handleMouseEnter = useCallback(() => {
-    if (isCollapsed) {
-      if (hoverTimeout) {
-        clearTimeout(hoverTimeout);
-      }
-      const timeout = setTimeout(() => {
-        setIsHovered(true);
-      }, 150); // Pequeno delay para evitar hover acidental
+    if (mode === "expand-on-hover") {
+      if (hoverTimeout) clearTimeout(hoverTimeout);
+      const timeout = setTimeout(() => setIsHovered(true), 150);
       setHoverTimeout(timeout);
     }
-  }, [isCollapsed, hoverTimeout]);
+  }, [mode, hoverTimeout]);
 
   const handleMouseLeave = useCallback(() => {
     if (hoverTimeout) {
       clearTimeout(hoverTimeout);
       setHoverTimeout(null);
     }
-    const timeout = setTimeout(() => {
-      setIsHovered(false);
-    }, 300); // Delay maior para dar tempo de mover o mouse
-    setHoverTimeout(timeout);
-  }, [hoverTimeout]);
+    if (mode === "expand-on-hover") {
+      const timeout = setTimeout(() => {
+        setIsHovered(false);
+        setShowControls(false);
+      }, 300);
+      setHoverTimeout(timeout);
+    }
+  }, [hoverTimeout, mode]);
 
   // Cleanup do timeout
   useEffect(() => {
     return () => {
-      if (hoverTimeout) {
-        clearTimeout(hoverTimeout);
-      }
+      if (hoverTimeout) clearTimeout(hoverTimeout);
     };
   }, [hoverTimeout]);
 
@@ -99,39 +95,11 @@ export function Sidebar() {
     return <SidebarSkeleton />;
   }
 
-  // Componente skeleton inline
-  function SidebarSkeleton() {
-    return (
-      <div className='w-64 bg-gradient-to-b from-purple-900 via-purple-800 to-indigo-900 shadow-2xl h-screen'>
-        {/* Header Skeleton */}
-        <div className='flex items-center w-full justify-between p-4 border-b border-purple-700/50 min-h-[65px]'>
-          <div className='flex items-center'>
-            <div className='w-8 h-8 bg-gradient-to-br from-purple-400 to-pink-400 rounded-xl flex items-center justify-center mr-3 shadow-lg'>
-              <SparklesIcon className='h-5 w-5 text-white' />
-            </div>
-            <h1 className='text-lg font-bold text-white whitespace-nowrap'>Aurastand</h1>
-          </div>
-        </div>
-        {/* Navigation Skeleton */}
-        <nav className='mt-4 pb-4'>
-          <div className='px-3 space-y-1'>
-            {[1, 2, 3, 4].map((item) => (
-              <div key={item} className='flex items-center px-3 py-2.5 rounded-xl'>
-                <div className='h-5 w-5 bg-purple-300/20 rounded mr-3 animate-pulse'></div>
-                <div className='h-4 w-20 bg-purple-300/20 rounded animate-pulse'></div>
-              </div>
-            ))}
-          </div>
-        </nav>
-      </div>
-    );
-  }
-
   return (
     <div
       className={`
         relative bg-gradient-to-b from-purple-900 via-purple-800 to-indigo-900 shadow-2xl border-r border-purple-700/50 h-screen 
-        transition-all duration-300 ease-in-out z-40
+        transition-all duration-300 ease-in-out z-40 flex flex-col
         ${isExpanded ? "w-64" : "w-16"}
       `}
       onMouseEnter={handleMouseEnter}
@@ -150,35 +118,19 @@ export function Sidebar() {
           )}
         </div>
 
-        {/* Logo minificado quando collapsed - com melhor sizing */}
+        {/* Logo minificado quando collapsed */}
         {!isExpanded && (
-          <div className='w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-400 rounded-xl flex items-center justify-center mx-auto shadow-lg'>
-            <SparklesIcon className='h-6 w-6 text-white' />
+          <div className='w-8 h-8 bg-gradient-to-br from-purple-400 to-pink-400 rounded-xl flex items-center justify-center mx-auto shadow-lg'>
+            <SparklesIcon className='h-5 w-5 text-white' />
           </div>
         )}
-
-        {/* Botão de toggle */}
-        <button
-          onClick={toggleCollapsed}
-          className={`
-            p-1.5 rounded-lg hover:bg-purple-700/50 transition-all duration-200 group
-            ${isExpanded ? "opacity-100" : "opacity-0 hover:opacity-100"}
-          `}
-          title={isCollapsed ? "Expandir sidebar" : "Recolher sidebar"}>
-          {isCollapsed ? (
-            <ChevronRightIcon className='h-4 w-4 text-purple-200 group-hover:text-white' />
-          ) : (
-            <ChevronLeftIcon className='h-4 w-4 text-purple-200 group-hover:text-white' />
-          )}
-        </button>
       </div>
 
       {/* Navigation */}
-      <nav className='mt-4 pb-4'>
+      <nav className='flex-1 mt-4 pb-4'>
         <div className='px-3 space-y-1'>
           {navigation.map((item) => {
             const isActive = isLinkActive(item.href);
-
             return (
               <div key={item.name} className='relative'>
                 <Link
@@ -231,11 +183,88 @@ export function Sidebar() {
         </div>
       </nav>
 
+      {/* Controles da Sidebar */}
+      <div className='border-t border-purple-700/50'>
+        <div className='p-3'>
+          <button
+            onClick={() => setShowControls((prev) => !prev)}
+            className={`
+              group flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200
+              text-purple-200 hover:bg-purple-700/50 hover:text-white
+              ${!isExpanded ? "justify-center" : ""}
+            `}
+            title='Controles da Sidebar'>
+            <CogIcon
+              className={`
+                flex-shrink-0 h-5 w-5 transition-colors text-purple-300 group-hover:text-white
+                ${isExpanded ? "mr-3" : ""}
+              `}
+            />
+            <span
+              className={`
+                whitespace-nowrap transition-all duration-300 font-medium
+                ${isExpanded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2 absolute"}
+              `}>
+              Sidebar control
+            </span>
+            {isExpanded && (
+              <ChevronRightIcon
+                className={`
+                  ml-auto h-4 w-4 transition-transform duration-200 text-purple-300 group-hover:text-white
+                  ${showControls ? "rotate-90" : ""}
+                `}
+              />
+            )}
+          </button>
+        </div>
+
+        {/* Painel de controles */}
+        {showControls && (
+          <div className='px-3 pb-3 space-y-2'>
+            <div
+              className={`
+                bg-purple-800/50 rounded-lg p-3 space-y-3
+                transition-opacity duration-200
+                ${isExpanded ? "opacity-100" : "opacity-30 pointer-events-none"}
+              `}>
+              {/* Opções de modo */}
+              <div className='space-y-2'>
+                {(["expanded", "collapsed", "expand-on-hover"] as SidebarMode[]).map((m) => (
+                  <label key={m} className='flex items-center space-x-3 cursor-pointer group'>
+                    <input
+                      type='radio'
+                      name='sidebar-mode'
+                      value={m}
+                      checked={mode === m}
+                      onChange={() => setMode(m)}
+                      className='w-3 h-3 text-purple-400 border-2 border-purple-400 focus:ring-purple-400 focus:ring-2'
+                    />
+                    <span className='text-xs text-purple-200 group-hover:text-white'>
+                      {m === "expanded" ? "Expanded" : m === "collapsed" ? "Collapsed" : "Expand on hover"}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tooltip para controles quando collapsed */}
+        {!isExpanded && (
+          <div className='absolute left-full bottom-16 ml-3 z-50 pointer-events-none'>
+            <div className='bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-xl border border-gray-700'>
+              Sidebar control
+              <div className='absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-900 rotate-45 border-l border-b border-gray-700' />
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Aura effect */}
       <div className='absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-purple-600/20 to-transparent pointer-events-none' />
 
-      {/* Hint para expandir - apenas quando collapsed e não hovered */}
-      {isCollapsed && !isHovered && (
+      {/* Hint para expandir */}
+      {!isExpanded && !isHovered && (
         <div className='absolute bottom-6 left-1/2 -translate-x-1/2'>
           <div className='text-purple-400 text-xs text-center'>
             <ChevronRightIcon className='h-4 w-4 mx-auto animate-pulse opacity-60' />
