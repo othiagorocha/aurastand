@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
+import { useSidebar } from "@/hooks/use-sidebar";
 import {
   HomeIcon,
   FolderIcon,
@@ -11,7 +12,6 @@ import {
   SparklesIcon,
   CogIcon,
 } from "@heroicons/react/24/outline";
-import { SidebarSkeleton } from "./sidebar-skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const navigation = [
@@ -25,101 +25,48 @@ type SidebarMode = "expanded" | "collapsed" | "expand-on-hover";
 
 export function Sidebar() {
   const pathname = usePathname();
-  const [mode, setMode] = useState<SidebarMode>("expanded");
-  const [isHovered, setIsHovered] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
+  const { mode, setMode, isExpanded, isHovered, setHovered } = useSidebar();
   const [showControls, setShowControls] = useState(false);
-
-  // Aguarda a hidratação antes de carregar do localStorage
-  useEffect(() => {
-    setMounted(true);
-    const savedMode = localStorage.getItem("sidebar-mode") as SidebarMode;
-    if (savedMode && ["expanded", "collapsed", "expand-on-hover"].includes(savedMode)) {
-      setMode(savedMode);
-    }
-  }, []);
-
-  // Salva o estado no localStorage apenas após montar
-  useEffect(() => {
-    if (mounted) {
-      localStorage.setItem("sidebar-mode", mode);
-    }
-  }, [mode, mounted]);
-
-  // Reset estados quando mode muda
-  useEffect(() => {
-    if (mode !== "expand-on-hover") {
-      setIsHovered(false);
-    }
-    setShowControls(false);
-  }, [mode]);
-
-  // Determina se a sidebar deve estar expandida
-  const isExpanded = mode === "expanded" || (mode === "expand-on-hover" && isHovered);
 
   // Função para verificar se o link está ativo (incluindo subníveis)
   const isLinkActive = useCallback(
     (href: string) => {
+      // Caso especial para a página inicial "/"
       if (href === "/") {
         return pathname === "/";
       }
+      // Para outras rotas, verifica se a URL atual começa com o href
       return pathname.startsWith(href);
     },
     [pathname]
   );
 
-  // Handlers de mouse com debounce para evitar o piscar
+  // Handlers de mouse para o modo expand-on-hover
   const handleMouseEnter = useCallback(() => {
     if (mode === "expand-on-hover") {
-      if (hoverTimeout) clearTimeout(hoverTimeout);
-      const timeout = setTimeout(() => setIsHovered(true), 150);
-      setHoverTimeout(timeout);
+      setHovered(true);
     }
-  }, [mode, hoverTimeout]);
+  }, [mode, setHovered]);
 
   const handleMouseLeave = useCallback(() => {
-    if (hoverTimeout) {
-      clearTimeout(hoverTimeout);
-      setHoverTimeout(null);
-    }
     if (mode === "expand-on-hover") {
-      const timeout = setTimeout(() => {
-        setIsHovered(false);
-      }, 300);
-      setHoverTimeout(timeout);
+      setHovered(false);
     }
-  }, [hoverTimeout, mode]);
+  }, [mode, setHovered]);
 
   // Handler para mudança de modo
-  const handleModeChange = useCallback((newMode: SidebarMode) => {
-    setMode(newMode);
-    setShowControls(false); // Fecha o painel ao mudar modo
-
-    // Reset de estados baseado no novo modo
-    if (newMode === "expanded") {
-      setIsHovered(false);
-    } else if (newMode === "collapsed") {
-      setIsHovered(false);
-    }
-  }, []);
+  const handleModeChange = useCallback(
+    (newMode: SidebarMode) => {
+      setMode(newMode);
+      setShowControls(false); // Fecha o painel ao mudar modo
+    },
+    [setMode]
+  );
 
   // Toggle dos controles
   const handleToggleControls = useCallback(() => {
     setShowControls((prev) => !prev);
   }, []);
-
-  // Cleanup do timeout
-  useEffect(() => {
-    return () => {
-      if (hoverTimeout) clearTimeout(hoverTimeout);
-    };
-  }, [hoverTimeout]);
-
-  // Evita renderização no servidor para prevenir hidratação mismatch
-  if (!mounted) {
-    return <SidebarSkeleton />;
-  }
 
   // Componente para item de navegação com tooltip
   const NavigationItem = ({ item }: { item: (typeof navigation)[0] }) => {
@@ -181,8 +128,8 @@ export function Sidebar() {
     <TooltipProvider delayDuration={200}>
       <div
         className={`
-          relative bg-gradient-to-b from-purple-900 via-purple-800 to-indigo-900 shadow-2xl border-r border-purple-700/50 h-screen 
-          transition-all duration-300 ease-in-out z-40 flex flex-col
+          fixed left-0 top-0 bg-gradient-to-b from-purple-900 via-purple-800 to-indigo-900 shadow-2xl border-r border-purple-700/50 h-screen 
+          transition-all duration-300 ease-in-out z-50 flex flex-col
           ${isExpanded ? "w-64" : "w-16"}
         `}
         onMouseEnter={handleMouseEnter}
