@@ -20,9 +20,11 @@ function SubmitButton() {
   );
 }
 
+const initialState: AuthFormState = {};
+
 export default function LoginPage() {
   const router = useRouter();
-  const [state, formAction] = useFormState<AuthFormState, FormData>(loginUser, undefined);
+  const [state, formAction] = useFormState<AuthFormState, FormData>(loginUser, initialState);
 
   useEffect(() => {
     if (state?.success) {
