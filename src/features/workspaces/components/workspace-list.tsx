@@ -47,7 +47,8 @@ export function WorkspaceList({ workspaces }: WorkspaceListProps) {
               <Link href={`/workspaces/${workspace.id}`} className='text-blue-600 hover:text-blue-800'>
                 Ver
               </Link>
-              <form action={deleteWorkspace.bind(null, workspace.id)}>
+              <form action={deleteWorkspace}>
+                <input type='hidden' name='workspaceId' value={workspace.id} />
                 <button
                   type='submit'
                   className='text-red-600 hover:text-red-800'

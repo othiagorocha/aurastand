@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
+import type { WorkspaceFormState } from "@/types/form-states";
 
 const createWorkspaceSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório").max(100, "Nome muito longo"),
@@ -17,7 +18,10 @@ const updateWorkspaceSchema = z.object({
   description: z.string().optional(),
 });
 
-export async function createWorkspace(prevState: any, formData: FormData) {
+export async function createWorkspace(
+  prevState: WorkspaceFormState | undefined,
+  formData: FormData
+): Promise<WorkspaceFormState> {
   const user = await getCurrentUser();
   if (!user) {
     redirect("/login");
@@ -56,7 +60,7 @@ export async function createWorkspace(prevState: any, formData: FormData) {
     });
 
     revalidatePath("/workspaces");
-    return { success: true, workspace };
+    return { success: true };
   } catch (error) {
     return {
       errors: {
@@ -66,7 +70,10 @@ export async function createWorkspace(prevState: any, formData: FormData) {
   }
 }
 
-export async function updateWorkspace(prevState: any, formData: FormData) {
+export async function updateWorkspace(
+  prevState: WorkspaceFormState | undefined,
+  formData: FormData
+): Promise<WorkspaceFormState> {
   const user = await getCurrentUser();
   if (!user) {
     redirect("/login");
@@ -121,13 +128,19 @@ export async function updateWorkspace(prevState: any, formData: FormData) {
   }
 }
 
-export async function deleteWorkspace(workspaceId: string) {
+export async function deleteWorkspace(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
   if (!user) {
     redirect("/login");
   }
 
   try {
+    const workspaceId = formData.get("workspaceId") as string;
+
+    if (!workspaceId) {
+      throw new Error("ID do workspace é obrigatório");
+    }
+
     // Verificar se usuário tem permissão
     const workspaceUser = await db.workspaceUser.findFirst({
       where: {
@@ -146,7 +159,6 @@ export async function deleteWorkspace(workspaceId: string) {
     });
 
     revalidatePath("/workspaces");
-    return { success: true };
   } catch (error) {
     throw new Error("Erro ao deletar workspace");
   }

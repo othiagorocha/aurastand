@@ -1,9 +1,11 @@
+// src/app/(auth)/register/page.tsx
 "use client";
 
 import { useFormState, useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { registerUser } from "@/actions/auth-actions";
+import type { AuthFormState } from "@/types/form-states";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -20,7 +22,7 @@ function SubmitButton() {
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [state, formAction] = useFormState(registerUser, undefined);
+  const [state, formAction] = useFormState<AuthFormState, FormData>(registerUser, undefined);
 
   useEffect(() => {
     if (state?.success) {
