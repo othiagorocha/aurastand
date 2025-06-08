@@ -1,3 +1,4 @@
+// src/actions/project-actions.ts
 "use server";
 
 import { revalidatePath } from "next/cache";
@@ -5,6 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
+import type { ProjectFormState } from "@/types/form-states";
 
 const createProjectSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -15,7 +17,7 @@ const createProjectSchema = z.object({
   endDate: z.string().optional(),
 });
 
-export async function createProject(prevState: any, formData: FormData) {
+export async function createProject(prevState: ProjectFormState | undefined, formData: FormData): Promise<ProjectFormState> {
   const user = await getCurrentUser();
   if (!user) {
     redirect("/login");
@@ -39,7 +41,7 @@ export async function createProject(prevState: any, formData: FormData) {
 
     const { name, description, workspaceId, priority, startDate, endDate } = validatedFields.data;
 
-    const project = await db.project.create({
+    await db.project.create({
       data: {
         name,
         description,
@@ -53,8 +55,8 @@ export async function createProject(prevState: any, formData: FormData) {
 
     revalidatePath("/projects");
     revalidatePath(`/workspaces/${workspaceId}`);
-    return { success: true, project };
-  } catch (error) {
+    return { success: true };
+  } catch {
     return {
       errors: {
         _form: ["Erro ao criar projeto"],
@@ -63,7 +65,7 @@ export async function createProject(prevState: any, formData: FormData) {
   }
 }
 
-export async function updateProject(prevState: any, formData: FormData) {
+export async function updateProject(prevState: ProjectFormState | undefined, formData: FormData): Promise<ProjectFormState> {
   const user = await getCurrentUser();
   if (!user) {
     redirect("/login");
@@ -102,7 +104,7 @@ export async function updateProject(prevState: any, formData: FormData) {
     revalidatePath("/projects");
     revalidatePath(`/projects/${id}`);
     return { success: true };
-  } catch (error) {
+  } catch {
     return {
       errors: {
         _form: ["Erro ao atualizar projeto"],
@@ -123,7 +125,7 @@ export async function deleteProject(projectId: string): Promise<void> {
     });
 
     revalidatePath("/projects");
-  } catch (error) {
+  } catch {
     throw new Error("Erro ao deletar projeto");
   }
 }
@@ -182,6 +184,11 @@ export async function getProjectsByWorkspace(workspaceId: string) {
       },
     },
     include: {
+      workspace: {
+        select: {
+          name: true,
+        },
+      },
       _count: {
         select: {
           tasks: true,

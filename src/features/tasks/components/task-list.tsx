@@ -1,3 +1,4 @@
+"use client";
 import { updateTaskStatus, deleteTask } from "@/actions/task-actions";
 
 interface Task {

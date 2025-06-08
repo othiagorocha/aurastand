@@ -1,9 +1,9 @@
 // src/app/(auth)/login/page.tsx
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useActionState, useEffect } from "react";
 import { loginUser } from "@/actions/auth-actions";
 import type { AuthFormState } from "@/types/form-states";
 
@@ -24,7 +24,7 @@ const initialState: AuthFormState = {};
 
 export default function LoginPage() {
   const router = useRouter();
-  const [state, formAction] = useFormState<AuthFormState, FormData>(loginUser, initialState);
+  const [state, formAction] = useActionState<AuthFormState, FormData>(loginUser, initialState);
 
   useEffect(() => {
     if (state?.success) {

@@ -1,3 +1,4 @@
+"use client";
 import Link from "next/link";
 import { deleteProject } from "@/actions/project-actions";
 

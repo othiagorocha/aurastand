@@ -1,9 +1,10 @@
 // src/components/forms/workspace-form.tsx
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useFormStatus } from "react-dom";
 import { createWorkspace } from "@/actions/workspace-actions";
 import type { WorkspaceFormState } from "@/types/form-states";
+import { useActionState } from "react";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -21,7 +22,7 @@ function SubmitButton() {
 const initialState: WorkspaceFormState = {};
 
 export function CreateWorkspaceForm() {
-  const [state, formAction] = useFormState<WorkspaceFormState, FormData>(createWorkspace, initialState);
+  const [state, formAction] = useActionState<WorkspaceFormState, FormData>(createWorkspace, initialState);
 
   return (
     <form action={formAction} className='space-y-4'>

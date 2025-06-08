@@ -1,3 +1,4 @@
+// src/actions/task-actions.ts
 "use server";
 
 import { revalidatePath } from "next/cache";
@@ -6,6 +7,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { getErrorMessage } from "@/lib/handle-error";
+import type { TaskFormState } from "@/types/form-states";
 
 const createTaskSchema = z.object({
   title: z.string().min(1, "Título é obrigatório"),
@@ -24,7 +26,7 @@ const updateTaskSchema = z.object({
   dueDate: z.string().optional(),
 });
 
-export async function createTask(prevState: any, formData: FormData) {
+export async function createTask(prevState: TaskFormState | undefined, formData: FormData): Promise<TaskFormState> {
   const user = await getCurrentUser();
   if (!user) {
     redirect("/login");
@@ -47,7 +49,7 @@ export async function createTask(prevState: any, formData: FormData) {
 
     const { title, description, projectId, priority, dueDate } = validatedFields.data;
 
-    const task = await db.task.create({
+    await db.task.create({
       data: {
         title,
         description,
@@ -60,7 +62,7 @@ export async function createTask(prevState: any, formData: FormData) {
 
     revalidatePath("/tasks");
     revalidatePath(`/projects/${projectId}`);
-    return { success: true, task };
+    return { success: true };
   } catch (error) {
     console.error(getErrorMessage(error));
     return {
@@ -71,7 +73,7 @@ export async function createTask(prevState: any, formData: FormData) {
   }
 }
 
-export async function updateTask(prevState: any, formData: FormData) {
+export async function updateTask(prevState: TaskFormState | undefined, formData: FormData): Promise<TaskFormState> {
   const user = await getCurrentUser();
   if (!user) {
     redirect("/login");
@@ -207,6 +209,18 @@ export async function getTasksByProject(projectId: string) {
           users: {
             some: {
               userId: user.id,
+            },
+          },
+        },
+      },
+    },
+    include: {
+      project: {
+        select: {
+          name: true,
+          workspace: {
+            select: {
+              name: true,
             },
           },
         },
