@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, Calendar, Kanban } from "lucide-react";
 import { TaskViewProps, Task } from "../types";
 import { TableView } from "./table-view";
-import { KanbanView } from "./kanban-view";
 import { CalendarView } from "./calendar-view";
+import { KanbanView } from "./kanban-view";
 
 interface TaskViewsProps extends TaskViewProps {
   defaultView?: "table" | "kanban" | "calendar";

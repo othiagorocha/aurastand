@@ -1,9 +1,9 @@
 // src/app/(dashboard)/tasks/[id]/task-detail-client.tsx
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useActionState, useEffect } from "react";
 import { updateTask } from "@/actions/task-actions";
 import type { TaskFormState } from "@/types/form-states";
 import type { Task } from "@/features/tasks/types";
@@ -40,7 +40,7 @@ const initialState: TaskFormState = {};
 
 export function TaskDetailClient({ task, workspaceUsers }: TaskDetailClientProps) {
   const router = useRouter();
-  const [state, formAction] = useFormState<TaskFormState, FormData>(updateTask, initialState);
+  const [state, formAction] = useActionState<TaskFormState, FormData>(updateTask, initialState);
 
   useEffect(() => {
     if (state?.success) {

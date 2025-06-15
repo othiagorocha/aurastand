@@ -134,7 +134,10 @@ export async function updateTask(prevState: TaskFormState | undefined, formData:
   }
 }
 
-export async function updateTaskStatus(taskId: string, status: "TODO" | "IN_PROGRESS" | "IN_REVIEW" | "DONE"): Promise<void> {
+export async function updateTaskStatus(
+  taskId: string,
+  status: "BACKLOG" | "TODO" | "IN_PROGRESS" | "IN_REVIEW" | "DONE"
+): Promise<void> {
   const user = await getCurrentUser();
   if (!user) {
     redirect("/login");

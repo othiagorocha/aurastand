@@ -20,6 +20,7 @@ export const KanbanCard = ({ task }: KanbanCardProps) => {
           <>
             <Avatar className='size-6'>
               <AvatarImage src={`https://avatar.vercel.sh/${task.assignee.email}`} />
+
               <AvatarFallback className='text-xs'>
                 {task.assignee.name
                   .split(" ")
