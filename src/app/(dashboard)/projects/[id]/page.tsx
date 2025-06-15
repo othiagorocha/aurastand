@@ -1,9 +1,8 @@
-// src/app/(dashboard)/projects/[id]/page.tsx
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getTasksByProject } from "@/actions/task-actions";
-import { TaskBoardPage } from "@/features/tasks/components/task-board-page";
+import { EnhancedTaskViews } from "@/features/tasks/components/enhanced-task-views";
 
 interface ProjectDetailPageProps {
   params: Promise<{
@@ -12,7 +11,7 @@ interface ProjectDetailPageProps {
 }
 
 export default async function ProjectDetailPage({ params }: ProjectDetailPageProps) {
-  const { id } = await params; // Aguarda a Promise do params
+  const { id } = await params;
 
   const user = await getCurrentUser();
   if (!user) {
@@ -33,6 +32,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
     include: {
       workspace: {
         select: {
+          id: true,
           name: true,
         },
       },
@@ -52,22 +52,31 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
 
   return (
     <div className='space-y-6'>
-      <div className='flex justify-between items-start'>
-        <div>
-          <nav className='text-sm text-gray-500 mb-2'>
-            <span className='text-gray-900'>{project.workspace.name}</span>
-            {" / "}
-            <span className='text-gray-900'>{project.name}</span>
-          </nav>
-          <h1 className='text-3xl font-bold text-gray-900'>{project.name}</h1>
-          {project.description && <p className='text-gray-600 mt-2'>{project.description}</p>}
-          <div className='flex items-center space-x-4 mt-3 text-sm text-gray-500'>
-            <span>{project._count.tasks} tarefas</span>
+      {/* Project Header */}
+      <div className='bg-white rounded-lg shadow-sm border p-6'>
+        <div className='flex justify-between items-start'>
+          <div>
+            <nav className='text-sm text-gray-500 mb-2'>
+              <span className='text-gray-900'>{project.workspace.name}</span>
+              {" / "}
+              <span className='text-gray-900'>{project.name}</span>
+            </nav>
+            <h1 className='text-3xl font-bold text-gray-900'>{project.name}</h1>
+            {project.description && <p className='text-gray-600 mt-2'>{project.description}</p>}
+            <div className='flex items-center space-x-4 mt-3 text-sm text-gray-500'>
+              <span>{project._count.tasks} tarefas</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <TaskBoardPage initialTasks={tasks} projectId={id} />
+      {/* Tasks */}
+      <EnhancedTaskViews
+        tasks={tasks}
+        projectId={id}
+        title={`Tarefas de ${project.name}`}
+        description='Gerencie as tarefas deste projeto'
+      />
     </div>
   );
 }

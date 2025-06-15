@@ -1,22 +1,68 @@
 // src/app/(dashboard)/tasks/new/page.tsx
-import { getAllProjects } from "@/actions/project-actions";
-import { CreateTaskForm } from "@/components/forms/task-form";
+import { db } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { TaskCreateClient } from "./task-create-client";
 
-export default async function NewTaskPage() {
-  const projects = await getAllProjects();
+interface TaskCreatePageProps {
+  searchParams: Promise<{
+    projectId?: string;
+  }>;
+}
 
-  return (
-    <div className='space-y-6'>
-      <div>
-        <h1 className='text-3xl font-bold text-gray-900'>Nova Tarefa</h1>
-        <p className='text-gray-600'>Crie uma nova tarefa para organizar seu trabalho.</p>
-      </div>
+export default async function TaskCreatePage({ searchParams }: TaskCreatePageProps) {
+  const { projectId } = await searchParams;
 
-      <div className='max-w-2xl'>
-        <div className='bg-white rounded-lg shadow p-6'>
-          <CreateTaskForm projects={projects} />
-        </div>
-      </div>
-    </div>
-  );
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect("/login");
+  }
+
+  // Buscar projetos do usuário
+  const projects = await db.project.findMany({
+    where: {
+      workspace: {
+        users: {
+          some: {
+            userId: user.id,
+          },
+        },
+      },
+    },
+    include: {
+      workspace: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+    orderBy: {
+      name: "asc",
+    },
+  });
+
+  // Se um projectId foi passado, buscar usuários desse workspace
+  let workspaceUsers: any[] = [];
+  if (projectId) {
+    const project = projects.find((p) => p.id === projectId);
+    if (project) {
+      workspaceUsers = await db.user.findMany({
+        where: {
+          workspaces: {
+            some: {
+              workspaceId: project.workspace.id,
+            },
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      });
+    }
+  }
+
+  return <TaskCreateClient projects={projects} workspaceUsers={workspaceUsers} defaultProjectId={projectId || ""} />;
 }
