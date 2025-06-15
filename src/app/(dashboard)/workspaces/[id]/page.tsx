@@ -7,12 +7,14 @@ import { ProjectList } from "@/features/projects/components/project-list";
 import Link from "next/link";
 
 interface WorkspaceDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function WorkspaceDetailPage({ params }: WorkspaceDetailPageProps) {
+  const { id } = await params; // Aguarda a Promise do params
+
   const user = await getCurrentUser();
   if (!user) {
     redirect("/login");
@@ -20,7 +22,7 @@ export default async function WorkspaceDetailPage({ params }: WorkspaceDetailPag
 
   const workspace = await db.workspace.findFirst({
     where: {
-      id: params.id,
+      id,
       users: {
         some: {
           userId: user.id,
@@ -41,7 +43,7 @@ export default async function WorkspaceDetailPage({ params }: WorkspaceDetailPag
     redirect("/workspaces");
   }
 
-  const projects = await getProjectsByWorkspace(params.id);
+  const projects = await getProjectsByWorkspace(id);
 
   return (
     <div className='space-y-6'>

@@ -1,11 +1,17 @@
 // src/features/tasks/types/index.ts
 
+export const TASK_STATUSES = ["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE", "BACKLOG"] as const;
+export type TaskStatus = (typeof TASK_STATUSES)[number];
+
+export const TASK_PRIORITIES = ["LOW", "MEDIUM", "HIGH", "URGENT"] as const;
+export type TaskPriority = (typeof TASK_PRIORITIES)[number];
+
 export interface Task {
   id: string;
   title: string;
   description: string | null;
-  status: "TODO" | "IN_PROGRESS" | "IN_REVIEW" | "DONE";
-  priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+  status: TaskStatus;
+  priority: TaskPriority;
   dueDate: Date | null;
   createdAt: Date;
   updatedAt: Date; // Adicionado para corresponder ao schema do Prisma
@@ -16,9 +22,6 @@ export interface Task {
     };
   };
 }
-
-export type TaskStatus = Task["status"];
-export type TaskPriority = Task["priority"];
 
 export interface TaskViewProps {
   tasks: Task[];

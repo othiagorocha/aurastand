@@ -2,9 +2,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Task, TaskStatus, TaskPriority } from "../types";
+import { Task, TaskStatus, TaskPriority, FilterStats } from "../types";
 
-// Tipos mais específicos para os filtros
+// Tipos para os filtros
 interface FilterOptions {
   status?: TaskStatus[];
   priority?: TaskPriority[];
@@ -17,10 +17,8 @@ interface FilterOptions {
   };
 }
 
-// Tipo para as chaves dos filtros que podem ser atualizadas
 type FilterKey = keyof FilterOptions;
 
-// Tipo para os valores que cada filtro pode receber
 type FilterValue<K extends FilterKey> = K extends "status"
   ? TaskStatus[]
   : K extends "priority"
@@ -30,14 +28,6 @@ type FilterValue<K extends FilterKey> = K extends "status"
   : K extends "dueDateRange"
   ? { start?: Date; end?: Date }
   : never;
-
-// Tipo para as estatísticas dos filtros
-interface FilterStats {
-  total: number;
-  filtered: number;
-  byStatus: Record<TaskStatus, number>;
-  byPriority: Record<TaskPriority, number>;
-}
 
 export function useTaskFilters(tasks: Task[]) {
   const [filters, setFilters] = useState<FilterOptions>({});
@@ -59,21 +49,19 @@ export function useTaskFilters(tasks: Task[]) {
         const searchLower = filters.searchTerm.toLowerCase();
         const titleMatch = task.title.toLowerCase().includes(searchLower);
         const descriptionMatch = task.description?.toLowerCase().includes(searchLower);
-        const projectMatch = task.project.name.toLowerCase().includes(searchLower);
+        const projectMatch = task.project?.name?.toLowerCase().includes(searchLower);
 
         if (!titleMatch && !descriptionMatch && !projectMatch) return false;
       }
 
       // Filtro por projeto
       if (filters.projectId) {
-        // Assumindo que você tenha o projectId na task
-        // if (task.projectId !== filters.projectId) return false;
+        if (task.project.id !== filters.projectId) return false;
       }
 
       // Filtro por workspace
       if (filters.workspaceId) {
-        // Assumindo que você tenha o workspaceId na task
-        // if (task.project.workspaceId !== filters.workspaceId) return false;
+        if (task.project.workspace.id !== filters.workspaceId) return false;
       }
 
       // Filtro por range de data
@@ -93,7 +81,6 @@ export function useTaskFilters(tasks: Task[]) {
     });
   }, [tasks, filters]);
 
-  // Função tipada corretamente para atualizar filtros
   const updateFilter = <K extends FilterKey>(key: K, value: FilterValue<K>) => {
     setFilters((prev) => ({
       ...prev,
@@ -119,16 +106,17 @@ export function useTaskFilters(tasks: Task[]) {
       total: tasks.length,
       filtered: filteredTasks.length,
       byStatus: {
-        TODO: filteredTasks.filter((t) => t.status === "TODO").length,
-        IN_PROGRESS: filteredTasks.filter((t) => t.status === "IN_PROGRESS").length,
-        IN_REVIEW: filteredTasks.filter((t) => t.status === "IN_REVIEW").length,
-        DONE: filteredTasks.filter((t) => t.status === "DONE").length,
+        [TaskStatus.BACKLOG]: filteredTasks.filter((t) => t.status === TaskStatus.BACKLOG).length,
+        [TaskStatus.TODO]: filteredTasks.filter((t) => t.status === TaskStatus.TODO).length,
+        [TaskStatus.IN_PROGRESS]: filteredTasks.filter((t) => t.status === TaskStatus.IN_PROGRESS).length,
+        [TaskStatus.IN_REVIEW]: filteredTasks.filter((t) => t.status === TaskStatus.IN_REVIEW).length,
+        [TaskStatus.DONE]: filteredTasks.filter((t) => t.status === TaskStatus.DONE).length,
       },
       byPriority: {
-        LOW: filteredTasks.filter((t) => t.priority === "LOW").length,
-        MEDIUM: filteredTasks.filter((t) => t.priority === "MEDIUM").length,
-        HIGH: filteredTasks.filter((t) => t.priority === "HIGH").length,
-        URGENT: filteredTasks.filter((t) => t.priority === "URGENT").length,
+        [TaskPriority.LOW]: filteredTasks.filter((t) => t.priority === TaskPriority.LOW).length,
+        [TaskPriority.MEDIUM]: filteredTasks.filter((t) => t.priority === TaskPriority.MEDIUM).length,
+        [TaskPriority.HIGH]: filteredTasks.filter((t) => t.priority === TaskPriority.HIGH).length,
+        [TaskPriority.URGENT]: filteredTasks.filter((t) => t.priority === TaskPriority.URGENT).length,
       },
     }),
     [tasks, filteredTasks]
@@ -144,140 +132,3 @@ export function useTaskFilters(tasks: Task[]) {
     hasActiveFilters: Object.keys(filters).length > 0,
   };
 }
-
-// Tipos para ordenação - chaves que podem ser ordenadas
-type SortableTaskKeys = "id" | "title" | "description" | "status" | "priority" | "dueDate" | "createdAt" | "updatedAt";
-type SortableNestedKeys = "project.name" | "project.workspace.name";
-type SortKey = SortableTaskKeys | SortableNestedKeys;
-
-interface SortConfig {
-  key: SortKey;
-  direction: "asc" | "desc";
-}
-
-// Tipo para valores que podem ser comparados
-type ComparableValue = string | number | Date | boolean | null | undefined;
-
-// Função auxiliar para extrair valor para comparação
-function extractComparableValue(task: Task, key: SortKey): ComparableValue {
-  switch (key) {
-    case "project.name":
-      return task.project.name;
-    case "project.workspace.name":
-      return task.project.workspace.name;
-    case "id":
-      return task.id;
-    case "title":
-      return task.title;
-    case "description":
-      return task.description;
-    case "status":
-      return task.status;
-    case "priority":
-      return task.priority;
-    case "dueDate":
-      return task.dueDate;
-    case "createdAt":
-      return task.createdAt;
-    case "updatedAt":
-      return task.updatedAt;
-    default:
-      return null;
-  }
-}
-
-// Hook para ordenação
-export function useTaskSorting(tasks: Task[]) {
-  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
-
-  const sortedTasks = useMemo(() => {
-    if (!sortConfig) return tasks;
-
-    return [...tasks].sort((a, b) => {
-      const aValue = extractComparableValue(a, sortConfig.key);
-      const bValue = extractComparableValue(b, sortConfig.key);
-
-      // Lidar com valores null/undefined
-      if (aValue == null && bValue == null) return 0;
-      if (aValue == null) return sortConfig.direction === "asc" ? 1 : -1;
-      if (bValue == null) return sortConfig.direction === "asc" ? -1 : 1;
-
-      // Lidar com datas
-      if (aValue instanceof Date && bValue instanceof Date) {
-        return sortConfig.direction === "asc" ? aValue.getTime() - bValue.getTime() : bValue.getTime() - aValue.getTime();
-      }
-
-      // Lidar com strings
-      if (typeof aValue === "string" && typeof bValue === "string") {
-        return sortConfig.direction === "asc" ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
-      }
-
-      // Lidar com números
-      if (typeof aValue === "number" && typeof bValue === "number") {
-        return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
-      }
-
-      // Lidar com booleanos
-      if (typeof aValue === "boolean" && typeof bValue === "boolean") {
-        const aNum = aValue ? 1 : 0;
-        const bNum = bValue ? 1 : 0;
-        return sortConfig.direction === "asc" ? aNum - bNum : bNum - aNum;
-      }
-
-      // Fallback para tipos mistos - converter para string
-      const aStr = String(aValue);
-      const bStr = String(bValue);
-      return sortConfig.direction === "asc" ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
-    });
-  }, [tasks, sortConfig]);
-
-  const requestSort = (key: SortKey) => {
-    let direction: "asc" | "desc" = "asc";
-
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === "asc") {
-      direction = "desc";
-    }
-
-    setSortConfig({ key, direction });
-  };
-
-  return {
-    sortedTasks,
-    sortConfig,
-    requestSort,
-  };
-}
-
-// Funções auxiliares para usar com os filtros
-export const createFilterHelpers = () => {
-  return {
-    // Helper para criar filtros de status
-    createStatusFilter: (statuses: TaskStatus[]) => ({
-      status: statuses,
-    }),
-
-    // Helper para criar filtros de prioridade
-    createPriorityFilter: (priorities: TaskPriority[]) => ({
-      priority: priorities,
-    }),
-
-    // Helper para criar filtro de busca
-    createSearchFilter: (searchTerm: string) => ({
-      searchTerm,
-    }),
-
-    // Helper para criar filtro de data
-    createDateRangeFilter: (start?: Date, end?: Date) => ({
-      dueDateRange: { start, end },
-    }),
-  };
-};
-
-// Type guards para verificação de tipos
-export const isValidTaskStatus = (status: string): status is TaskStatus => {
-  return ["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"].includes(status);
-};
-
-export const isValidTaskPriority = (priority: string): priority is TaskPriority => {
-  return ["LOW", "MEDIUM", "HIGH", "URGENT"].includes(priority);
-};

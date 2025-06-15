@@ -1,37 +1,38 @@
-// src/app/(dashboard)/tasks/complete/complete-tasks-client.tsx (CLIENT)
+// src/app/(dashboard)/tasks/complete/complete-tasks-client.tsx
 "use client";
 
-import { TaskViews } from "@/features/tasks/components/task-views";
+import { useState } from "react";
 import { TaskFilters } from "@/features/tasks/components/task-filters";
 import { useTaskFilters } from "@/features/tasks/hooks/use-task-filters";
 import { Task } from "@/features/tasks/types";
+import { TaskBoardView } from "@/features/tasks/components/task-board-view";
 
 interface CompleteTasksClientProps {
   initialTasks: Task[];
 }
 
 export function CompleteTasksClient({ initialTasks }: CompleteTasksClientProps) {
-  const { filteredTasks, filters, updateFilter } = useTaskFilters(initialTasks);
-
-  const handleTaskClick = (task: Task) => {
-    console.log("Task clicked:", task);
-    // Handle task click
-  };
+  const { filteredTasks, filters, updateFilter, clearFilters, stats, hasActiveFilters } = useTaskFilters(initialTasks);
 
   return (
     <div className='space-y-6'>
-      <div className='grid grid-cols-1 lg:grid-cols-4 gap-6'>
-        <div className='lg:col-span-1'>
-          <TaskFilters
-            searchTerm={filters.searchTerm}
-            onSearchChange={(term) => updateFilter("searchTerm", term)}
-            // ... other filter props
-          />
-        </div>
-        <div className='lg:col-span-3'>
-          <TaskViews tasks={filteredTasks} onTaskClick={handleTaskClick} />
-        </div>
-      </div>
+      {/* Filtros com todas as propriedades necessárias */}
+      <TaskFilters
+        searchTerm={filters.searchTerm}
+        onSearchChange={(term) => updateFilter("searchTerm", term)}
+        selectedStatuses={filters.status}
+        onStatusChange={(statuses) => updateFilter("status", statuses)}
+        selectedPriorities={filters.priority}
+        onPriorityChange={(priorities) => updateFilter("priority", priorities)}
+        dueDateRange={filters.dueDateRange}
+        onDateRangeChange={(range) => updateFilter("dueDateRange", range)}
+        onClearFilters={clearFilters}
+        hasActiveFilters={hasActiveFilters}
+        stats={stats}
+      />
+
+      {/* Board de Tarefas */}
+      <TaskBoardView tasks={filteredTasks} />
     </div>
   );
 }

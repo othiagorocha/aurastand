@@ -11,10 +11,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Search, Filter, X, CalendarIcon, ChevronDown } from "lucide-react";
+import { TaskStatus, TaskPriority, FilterStats } from "../types";
 import { statusConfig, priorityConfig } from "../config/task-config";
-import { TaskStatus, TaskPriority } from "../types";
 
-interface TaskFiltersProps {
+export interface TaskFiltersProps {
   searchTerm?: string;
   onSearchChange: (term: string) => void;
   selectedStatuses?: TaskStatus[];
@@ -25,12 +25,7 @@ interface TaskFiltersProps {
   onDateRangeChange: (range: { start?: Date; end?: Date }) => void;
   onClearFilters: () => void;
   hasActiveFilters: boolean;
-  stats?: {
-    total: number;
-    filtered: number;
-    byStatus: Record<TaskStatus, number>;
-    byPriority: Record<TaskPriority, number>;
-  };
+  stats?: FilterStats;
 }
 
 export function TaskFilters({
@@ -67,7 +62,6 @@ export function TaskFilters({
 
     const start = dueDateRange.start ? dueDateRange.start.toLocaleDateString() : "...";
     const end = dueDateRange.end ? dueDateRange.end.toLocaleDateString() : "...";
-
     return `${start} - ${end}`;
   };
 
@@ -75,18 +69,18 @@ export function TaskFilters({
     <Card className='w-full'>
       <CardHeader className='pb-3'>
         <div className='flex items-center justify-between'>
-          <CardTitle className='text-lg font-semibold flex items-center gap-2'>
-            <Filter className='h-5 w-5' />
+          <CardTitle className='text-lg font-medium flex items-center gap-2'>
+            <Filter className='h-4 w-4' />
             Filtros
-            {hasActiveFilters && (
+            {stats && (
               <Badge variant='secondary' className='ml-2'>
-                {stats?.filtered || 0} de {stats?.total || 0}
+                {stats.filtered} de {stats.total}
               </Badge>
             )}
           </CardTitle>
           <div className='flex items-center gap-2'>
             {hasActiveFilters && (
-              <Button variant='ghost' size='sm' onClick={onClearFilters}>
+              <Button variant='ghost' size='sm' onClick={onClearFilters} className='text-red-600 hover:text-red-700'>
                 <X className='h-4 w-4 mr-1' />
                 Limpar
               </Button>
@@ -100,186 +94,130 @@ export function TaskFilters({
 
       <CardContent className='space-y-4'>
         {/* Busca */}
-        <div className='space-y-2'>
-          <Label htmlFor='search'>Buscar</Label>
-          <div className='relative'>
-            <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-gray-500' />
-            <Input
-              id='search'
-              placeholder='Buscar por título, descrição ou projeto...'
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className='pl-9'
-            />
-          </div>
+        <div className='relative'>
+          <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400' />
+          <Input
+            type='text'
+            placeholder='Buscar tarefas...'
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className='pl-10'
+          />
         </div>
 
         {isExpanded && (
           <>
             {/* Status */}
-            <div className='space-y-3'>
-              <Label>Status</Label>
-              <div className='grid grid-cols-2 gap-2'>
+            <div className='space-y-2'>
+              <Label className='text-sm font-medium'>Status</Label>
+              <div className='flex flex-wrap gap-2'>
                 {Object.entries(statusConfig).map(([status, config]) => (
-                  <div key={status} className='flex items-center space-x-2'>
-                    <Checkbox
-                      id={`status-${status}`}
-                      checked={selectedStatuses.includes(status as TaskStatus)}
-                      onCheckedChange={() => handleStatusToggle(status as TaskStatus)}
-                    />
-                    <Label htmlFor={`status-${status}`} className='text-sm font-normal cursor-pointer flex items-center gap-2'>
-                      <div className='w-2 h-2 rounded-full' style={{ backgroundColor: config.color }} />
-                      {config.label}
+                  <div
+                    key={status}
+                    className='flex items-center space-x-2 cursor-pointer'
+                    onClick={() => handleStatusToggle(status as TaskStatus)}>
+                    <Checkbox checked={selectedStatuses.includes(status as TaskStatus)} onChange={() => {}} />
+                    <div className='flex items-center gap-2'>
+                      <div className={`w-3 h-3 rounded-full ${config.color}`} />
+                      <span className='text-sm'>{config.label}</span>
                       {stats && (
                         <Badge variant='outline' className='text-xs'>
                           {stats.byStatus[status as TaskStatus] || 0}
                         </Badge>
                       )}
-                    </Label>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Prioridade */}
-            <div className='space-y-3'>
-              <Label>Prioridade</Label>
-              <div className='grid grid-cols-2 gap-2'>
+            <div className='space-y-2'>
+              <Label className='text-sm font-medium'>Prioridade</Label>
+              <div className='flex flex-wrap gap-2'>
                 {Object.entries(priorityConfig).map(([priority, config]) => (
-                  <div key={priority} className='flex items-center space-x-2'>
-                    <Checkbox
-                      id={`priority-${priority}`}
-                      checked={selectedPriorities.includes(priority as TaskPriority)}
-                      onCheckedChange={() => handlePriorityToggle(priority as TaskPriority)}
-                    />
-                    <Label
-                      htmlFor={`priority-${priority}`}
-                      className='text-sm font-normal cursor-pointer flex items-center gap-2'>
-                      <div className='w-2 h-2 rounded-full' style={{ backgroundColor: config.color }} />
-                      {config.label}
+                  <div
+                    key={priority}
+                    className='flex items-center space-x-2 cursor-pointer'
+                    onClick={() => handlePriorityToggle(priority as TaskPriority)}>
+                    <Checkbox checked={selectedPriorities.includes(priority as TaskPriority)} onChange={() => {}} />
+                    <div className='flex items-center gap-2'>
+                      <div className={`w-3 h-3 rounded-full ${config.color}`} />
+                      <span className='text-sm'>{config.label}</span>
                       {stats && (
                         <Badge variant='outline' className='text-xs'>
                           {stats.byPriority[priority as TaskPriority] || 0}
                         </Badge>
                       )}
-                    </Label>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Data de Vencimento */}
-            <div className='space-y-3'>
-              <Label>Data de Vencimento</Label>
+            <div className='space-y-2'>
+              <Label className='text-sm font-medium'>Data de Vencimento</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant='outline' className='w-full justify-start text-left font-normal'>
+                  <Button variant='outline' className='w-full justify-start'>
                     <CalendarIcon className='mr-2 h-4 w-4' />
                     {formatDateRange()}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className='w-auto p-0' align='start'>
                   <div className='p-3 space-y-3'>
-                    <div className='space-y-2'>
-                      <Label className='text-sm font-medium'>Data Inicial</Label>
+                    <div>
+                      <Label className='text-sm'>Data de início</Label>
                       <Calendar
                         mode='single'
                         selected={dueDateRange?.start}
                         onSelect={(date) =>
                           onDateRangeChange({
-                            ...dueDateRange,
                             start: date,
+                            end: dueDateRange?.end,
                           })
                         }
-                        initialFocus
                       />
                     </div>
-                    <div className='space-y-2'>
-                      <Label className='text-sm font-medium'>Data Final</Label>
+                    <div>
+                      <Label className='text-sm'>Data de fim</Label>
                       <Calendar
                         mode='single'
                         selected={dueDateRange?.end}
                         onSelect={(date) =>
                           onDateRangeChange({
-                            ...dueDateRange,
+                            start: dueDateRange?.start,
                             end: date,
                           })
                         }
                       />
                     </div>
-                    <div className='flex gap-2'>
-                      <Button variant='outline' size='sm' onClick={() => onDateRangeChange({})} className='flex-1'>
-                        Limpar
-                      </Button>
-                    </div>
+                    <Button variant='outline' size='sm' onClick={() => onDateRangeChange({})} className='w-full'>
+                      Limpar datas
+                    </Button>
                   </div>
                 </PopoverContent>
               </Popover>
             </div>
-
-            {/* Filtros Rápidos */}
-            <div className='space-y-3'>
-              <Label>Filtros Rápidos</Label>
-              <div className='flex flex-wrap gap-2'>
-                <Button variant='outline' size='sm' onClick={() => onStatusChange(["TODO", "IN_PROGRESS"])}>
-                  Tarefas Ativas
-                </Button>
-                <Button variant='outline' size='sm' onClick={() => onPriorityChange(["HIGH", "URGENT"])}>
-                  Alta Prioridade
-                </Button>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={() => {
-                    const today = new Date();
-                    const endOfWeek = new Date(today);
-                    endOfWeek.setDate(today.getDate() + 7);
-                    onDateRangeChange({ start: today, end: endOfWeek });
-                  }}>
-                  Vence esta Semana
-                </Button>
-              </div>
-            </div>
           </>
         )}
 
-        {/* Resumo dos Filtros Ativos */}
+        {/* Filtros Ativos */}
         {hasActiveFilters && (
-          <div className='pt-3 border-t'>
-            <div className='flex flex-wrap gap-2'>
-              {selectedStatuses.length > 0 && (
-                <Badge variant='secondary'>
-                  Status: {selectedStatuses.join(", ")}
-                  <Button variant='ghost' size='sm' className='ml-1 h-auto p-0' onClick={() => onStatusChange([])}>
-                    <X className='h-3 w-3' />
-                  </Button>
-                </Badge>
-              )}
-              {selectedPriorities.length > 0 && (
-                <Badge variant='secondary'>
-                  Prioridade: {selectedPriorities.join(", ")}
-                  <Button variant='ghost' size='sm' className='ml-1 h-auto p-0' onClick={() => onPriorityChange([])}>
-                    <X className='h-3 w-3' />
-                  </Button>
-                </Badge>
-              )}
-              {searchTerm && (
-                <Badge variant='secondary'>
-                  Busca: &quot;{searchTerm}&quot;
-                  <Button variant='ghost' size='sm' className='ml-1 h-auto p-0' onClick={() => onSearchChange("")}>
-                    <X className='h-3 w-3' />
-                  </Button>
-                </Badge>
-              )}
-              {dueDateRange && (dueDateRange.start || dueDateRange.end) && (
-                <Badge variant='secondary'>
-                  Data: {formatDateRange()}
-                  <Button variant='ghost' size='sm' className='ml-1 h-auto p-0' onClick={() => onDateRangeChange({})}>
-                    <X className='h-3 w-3' />
-                  </Button>
-                </Badge>
-              )}
-            </div>
+          <div className='flex flex-wrap gap-2 pt-2 border-t'>
+            {selectedStatuses.map((status) => (
+              <Badge key={status} variant='secondary' className='cursor-pointer'>
+                {statusConfig[status].label}
+                <X className='h-3 w-3 ml-1' onClick={() => handleStatusToggle(status)} />
+              </Badge>
+            ))}
+            {selectedPriorities.map((priority) => (
+              <Badge key={priority} variant='secondary' className='cursor-pointer'>
+                {priorityConfig[priority].label}
+                <X className='h-3 w-3 ml-1' onClick={() => handlePriorityToggle(priority)} />
+              </Badge>
+            ))}
           </div>
         )}
       </CardContent>

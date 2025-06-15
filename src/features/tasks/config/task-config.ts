@@ -1,64 +1,62 @@
 // src/features/tasks/config/task-config.ts
-import { Circle, Clock, AlertCircle, CheckCircle2 } from "lucide-react";
-import { StatusConfig, PriorityConfig, TaskStatus, TaskPriority } from "../types";
+import { TaskStatus, TaskPriority } from "../types";
 
-export const statusConfig: Record<TaskStatus, StatusConfig> = {
+export const statusConfig: Record<TaskStatus, { label: string; color: string; textColor: string; bgColor: string }> = {
+  BACKLOG: {
+    label: "Backlog",
+    color: "bg-gray-500",
+    textColor: "text-gray-700",
+    bgColor: "bg-gray-100",
+  },
   TODO: {
-    label: "A fazer",
-    color: "bg-gray-100 text-gray-800",
-    icon: Circle,
+    label: "Para Fazer",
+    color: "bg-blue-500",
+    textColor: "text-blue-700",
+    bgColor: "bg-blue-100",
   },
   IN_PROGRESS: {
-    label: "Em andamento",
-    color: "bg-blue-100 text-blue-800",
-    icon: Clock,
+    label: "Em Progresso",
+    color: "bg-yellow-500",
+    textColor: "text-yellow-700",
+    bgColor: "bg-yellow-100",
   },
   IN_REVIEW: {
-    label: "Em revisão",
-    color: "bg-yellow-100 text-yellow-800",
-    icon: AlertCircle,
+    label: "Em Revisão",
+    color: "bg-purple-500",
+    textColor: "text-purple-700",
+    bgColor: "bg-purple-100",
   },
   DONE: {
-    label: "Concluída",
-    color: "bg-green-100 text-green-800",
-    icon: CheckCircle2,
+    label: "Concluído",
+    color: "bg-green-500",
+    textColor: "text-green-700",
+    bgColor: "bg-green-100",
   },
 };
 
-export const priorityConfig: Record<TaskPriority, PriorityConfig> = {
+export const priorityConfig: Record<TaskPriority, { label: string; color: string; textColor: string; bgColor: string }> = {
   LOW: {
     label: "Baixa",
-    color: "bg-gray-100 text-gray-800",
+    color: "bg-gray-500",
+    textColor: "text-gray-700",
+    bgColor: "bg-gray-100",
   },
   MEDIUM: {
     label: "Média",
-    color: "bg-blue-100 text-blue-800",
+    color: "bg-blue-500",
+    textColor: "text-blue-700",
+    bgColor: "bg-blue-100",
   },
   HIGH: {
     label: "Alta",
-    color: "bg-orange-100 text-orange-800",
+    color: "bg-orange-500",
+    textColor: "text-orange-700",
+    bgColor: "bg-orange-100",
   },
   URGENT: {
     label: "Urgente",
-    color: "bg-red-100 text-red-800",
+    color: "bg-red-500",
+    textColor: "text-red-700",
+    bgColor: "bg-red-100",
   },
 };
-
-export const statusOrder: TaskStatus[] = ["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"];
-
-export const monthNames = [
-  "Janeiro",
-  "Fevereiro",
-  "Março",
-  "Abril",
-  "Maio",
-  "Junho",
-  "Julho",
-  "Agosto",
-  "Setembro",
-  "Outubro",
-  "Novembro",
-  "Dezembro",
-];
-
-export const dayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
