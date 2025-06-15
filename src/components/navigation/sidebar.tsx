@@ -92,8 +92,7 @@ export function Sidebar() {
           `}
           aria-hidden='true'
         />
-
-        {/* Nome do item */}
+        -{/* Nome do item */}
         <span
           className={`
             whitespace-nowrap transition-all duration-300 font-medium

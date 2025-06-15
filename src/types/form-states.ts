@@ -1,13 +1,15 @@
-// src/types/form-states.ts
-
-// Tipo base para estados de formulário
-export interface BaseFormState {
+// src/types/form-states.ts (já corrigido pelo usuário)
+export interface FormState<T = Record<string, unknown>> {
   success?: boolean;
-  message?: string;
+  errors?: {
+    [K in keyof T]?: string[];
+  } & {
+    _form?: string[];
+  };
+  data?: T;
 }
 
-// Estados específicos para cada formulário
-export interface AuthFormState extends BaseFormState {
+export interface AuthFormState extends FormState {
   errors?: {
     name?: string[];
     email?: string[];
@@ -16,7 +18,8 @@ export interface AuthFormState extends BaseFormState {
   };
 }
 
-export interface WorkspaceFormState extends BaseFormState {
+export interface WorkspaceFormState extends FormState {
+  workspaceId?: string;
   errors?: {
     name?: string[];
     description?: string[];
@@ -24,7 +27,8 @@ export interface WorkspaceFormState extends BaseFormState {
   };
 }
 
-export interface ProjectFormState extends BaseFormState {
+export interface ProjectFormState extends FormState {
+  projectId?: string;
   errors?: {
     name?: string[];
     description?: string[];
@@ -36,7 +40,8 @@ export interface ProjectFormState extends BaseFormState {
   };
 }
 
-export interface TaskFormState extends BaseFormState {
+export interface TaskFormState extends FormState {
+  taskId?: string;
   errors?: {
     title?: string[];
     description?: string[];

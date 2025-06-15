@@ -1,85 +1,27 @@
-// src/app/(dashboard)/tasks/[id]/page.tsx
-import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
-import { redirect } from "next/navigation";
+// src/app/(dashboard)/tasks/[id]/page.tsx - EXEMPLO CORRIGIDO
+import { notFound } from "next/navigation";
+import { getTaskById, getWorkspaceUsers } from "@/actions/task-actions";
 import { TaskDetailClient } from "./task-detail-client";
+import { transformPrismaToTask } from "@/features/tasks/utils/task-transformer";
 
 interface TaskDetailPageProps {
-  params: Promise<{
+  params: {
     id: string;
-  }>;
+  };
 }
 
 export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
-  const { id } = await params;
+  const rawTask = await getTaskById(params.id);
 
-  const user = await getCurrentUser();
-  if (!user) {
-    redirect("/login");
+  if (!rawTask) {
+    notFound();
   }
 
-  const task = await db.task.findFirst({
-    where: {
-      id,
-      project: {
-        workspace: {
-          users: {
-            some: {
-              userId: user.id,
-            },
-          },
-        },
-      },
-    },
-    include: {
-      project: {
-        select: {
-          id: true,
-          name: true,
-          workspace: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-      },
-      assignee: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-    },
-  });
+  // ✅ Transformar dados do Prisma para formato esperado
+  const task = transformPrismaToTask(rawTask);
 
-  if (!task) {
-    redirect("/tasks");
-  }
-
-  // Buscar usuários do workspace para atribuição
-  const workspaceUsers = await db.user.findMany({
-    where: {
-      workspaces: {
-        some: {
-          workspaceId: task.project.workspace.id,
-        },
-      },
-    },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-    },
-  });
+  // Buscar usuários do workspace para o select de assignee
+  const workspaceUsers = await getWorkspaceUsers(task.project.workspace.id);
 
   return <TaskDetailClient task={task} workspaceUsers={workspaceUsers} />;
 }

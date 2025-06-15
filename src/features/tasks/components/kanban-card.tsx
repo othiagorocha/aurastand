@@ -16,7 +16,7 @@ export const KanbanCard = ({ task }: KanbanCardProps) => {
 
       {/* Assignee section - verificação se existe assignee */}
       <div className='flex items-center gap-x-1.5'>
-        {task.assignee ? (
+        {task.assignee && task.assignee.name ? (
           <>
             <Avatar className='size-6'>
               <AvatarImage src={`https://avatar.vercel.sh/${task.assignee.email}`} />

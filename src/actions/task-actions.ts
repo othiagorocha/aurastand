@@ -15,6 +15,7 @@ const createTaskSchema = z.object({
   projectId: z.string(),
   priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]).default("MEDIUM"),
   dueDate: z.string().optional(),
+  assigneeId: z.string().optional(), // ✅ Adicionado assigneeId
 });
 
 const updateTaskSchema = z.object({
@@ -24,6 +25,7 @@ const updateTaskSchema = z.object({
   status: z.enum(["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"]),
   priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]),
   dueDate: z.string().optional(),
+  assigneeId: z.string().optional(), // ✅ Adicionado assigneeId
 });
 
 export async function createTask(prevState: TaskFormState | undefined, formData: FormData): Promise<TaskFormState> {
@@ -39,6 +41,7 @@ export async function createTask(prevState: TaskFormState | undefined, formData:
       projectId: formData.get("projectId"),
       priority: formData.get("priority"),
       dueDate: formData.get("dueDate"),
+      assigneeId: formData.get("assigneeId"), // ✅ Incluir assigneeId
     });
 
     if (!validatedFields.success) {
@@ -47,9 +50,9 @@ export async function createTask(prevState: TaskFormState | undefined, formData:
       };
     }
 
-    const { title, description, projectId, priority, dueDate } = validatedFields.data;
+    const { title, description, projectId, priority, dueDate, assigneeId } = validatedFields.data;
 
-    await db.task.create({
+    const newTask = await db.task.create({
       data: {
         title,
         description,
@@ -57,12 +60,17 @@ export async function createTask(prevState: TaskFormState | undefined, formData:
         userId: user.id,
         priority,
         dueDate: dueDate ? new Date(dueDate) : null,
+        assigneeId: assigneeId || null, // ✅ Incluir assigneeId
       },
     });
 
     revalidatePath("/tasks");
     revalidatePath(`/projects/${projectId}`);
-    return { success: true };
+
+    return {
+      success: true,
+      taskId: newTask.id,
+    };
   } catch (error) {
     console.error(getErrorMessage(error));
     return {
@@ -87,6 +95,7 @@ export async function updateTask(prevState: TaskFormState | undefined, formData:
       status: formData.get("status"),
       priority: formData.get("priority"),
       dueDate: formData.get("dueDate"),
+      assigneeId: formData.get("assigneeId"), // ✅ Incluir assigneeId
     });
 
     if (!validatedFields.success) {
@@ -95,7 +104,7 @@ export async function updateTask(prevState: TaskFormState | undefined, formData:
       };
     }
 
-    const { id, title, description, status, priority, dueDate } = validatedFields.data;
+    const { id, title, description, status, priority, dueDate, assigneeId } = validatedFields.data;
 
     await db.task.update({
       where: { id },
@@ -105,11 +114,16 @@ export async function updateTask(prevState: TaskFormState | undefined, formData:
         status,
         priority,
         dueDate: dueDate ? new Date(dueDate) : null,
+        assigneeId: assigneeId || null, // ✅ Incluir assigneeId
       },
     });
 
     revalidatePath("/tasks");
-    return { success: true };
+    revalidatePath(`/tasks/${id}`);
+    return {
+      success: true,
+      taskId: id,
+    };
   } catch (error) {
     console.error(getErrorMessage(error));
     return {
@@ -133,6 +147,7 @@ export async function updateTaskStatus(taskId: string, status: "TODO" | "IN_PROG
     });
 
     revalidatePath("/tasks");
+    revalidatePath(`/tasks/${taskId}`);
   } catch (error) {
     console.error(getErrorMessage(error));
     throw new Error("Erro ao atualizar status da tarefa");
@@ -157,6 +172,7 @@ export async function deleteTask(taskId: string): Promise<void> {
   }
 }
 
+// ✅ Query corrigida com todos os relacionamentos necessários
 export async function getAllTasks() {
   const user = await getCurrentUser();
   if (!user) {
@@ -178,14 +194,28 @@ export async function getAllTasks() {
     include: {
       project: {
         select: {
-          id: true,
+          id: true, // ✅ Incluir ID do projeto
           name: true,
           workspace: {
             select: {
-              id: true,
+              id: true, // ✅ Incluir ID do workspace
               name: true,
             },
           },
+        },
+      },
+      assignee: {
+        select: {
+          id: true,
+          name: true, // ✅ Pode ser null
+          email: true,
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          name: true, // ✅ Pode ser null
+          email: true,
         },
       },
     },
@@ -197,6 +227,7 @@ export async function getAllTasks() {
   return tasks;
 }
 
+// ✅ Query corrigida com todos os relacionamentos necessários
 export async function getTasksByProject(projectId: string) {
   const user = await getCurrentUser();
   if (!user) {
@@ -219,6 +250,62 @@ export async function getTasksByProject(projectId: string) {
     include: {
       project: {
         select: {
+          id: true, // ✅ Incluir ID do projeto
+          name: true,
+          workspace: {
+            select: {
+              id: true, // ✅ Incluir ID do workspace
+              name: true,
+            },
+          },
+        },
+      },
+      assignee: {
+        select: {
+          id: true,
+          name: true, // ✅ Pode ser null
+          email: true,
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          name: true, // ✅ Pode ser null
+          email: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return tasks;
+}
+
+// ✅ Nova função para buscar uma tarefa específica com todos os relacionamentos
+export async function getTaskById(taskId: string) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return null;
+  }
+
+  const task = await db.task.findFirst({
+    where: {
+      id: taskId,
+      project: {
+        workspace: {
+          users: {
+            some: {
+              userId: user.id,
+            },
+          },
+        },
+      },
+    },
+    include: {
+      project: {
+        select: {
           id: true,
           name: true,
           workspace: {
@@ -229,11 +316,75 @@ export async function getTasksByProject(projectId: string) {
           },
         },
       },
-    },
-    orderBy: {
-      createdAt: "desc",
+      assignee: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
     },
   });
 
-  return tasks;
+  return task;
+}
+
+// ✅ Nova função para buscar usuários de um workspace
+export async function getWorkspaceUsers(workspaceId?: string) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return [];
+  }
+
+  // Se workspaceId for fornecido, buscar usuários desse workspace específico
+  if (workspaceId) {
+    const workspaceUsers = await db.workspaceUser.findMany({
+      where: {
+        workspaceId,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    return workspaceUsers.map((wu) => wu.user);
+  }
+
+  // Caso contrário, buscar usuários de todos os workspaces do usuário atual
+  const workspaceUsers = await db.workspaceUser.findMany({
+    where: {
+      workspace: {
+        users: {
+          some: {
+            userId: user.id,
+          },
+        },
+      },
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+    distinct: ["userId"], // Evitar duplicatas
+  });
+
+  return workspaceUsers.map((wu) => wu.user);
 }

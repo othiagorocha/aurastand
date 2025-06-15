@@ -1,18 +1,17 @@
 // src/app/(dashboard)/tasks/new/task-create-client.tsx
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save } from "lucide-react";
-import { statusConfig, priorityConfig } from "@/features/tasks/config/task-config";
-import { TaskStatus, TaskPriority } from "@/features/tasks/types";
+import { useFormState, useFormStatus } from "react-dom";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 import { createTask } from "@/actions/task-actions";
+import type { TaskFormState } from "@/types/form-states";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Project {
   id: string;
@@ -29,224 +28,146 @@ interface WorkspaceUser {
   email: string;
 }
 
+// ✅ Interface atualizada para incluir workspaceUsers
 interface TaskCreateClientProps {
   projects: Project[];
-  workspaceUsers: WorkspaceUser[];
-  defaultProjectId: string;
+  workspaceUsers: WorkspaceUser[]; // ✅ Adicionado
+  defaultProjectId?: string; // ✅ Opcional
 }
 
-export function TaskCreateClient({ projects, workspaceUsers: initialWorkspaceUsers, defaultProjectId }: TaskCreateClientProps) {
+function SubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button type='submit' disabled={pending} className='w-full'>
+      {pending ? "Criando..." : "Criar Tarefa"}
+    </Button>
+  );
+}
+
+const initialState: TaskFormState = {};
+
+export function TaskCreateClient({ projects, workspaceUsers, defaultProjectId }: TaskCreateClientProps) {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [workspaceUsers, setWorkspaceUsers] = useState(initialWorkspaceUsers);
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    status: "TODO" as TaskStatus,
-    priority: "MEDIUM" as TaskPriority,
-    dueDate: "",
-    projectId: defaultProjectId,
-    assigneeId: "",
-  });
+  const searchParams = useSearchParams();
+  const projectIdFromUrl = searchParams.get("projectId");
 
-  const handleProjectChange = async (projectId: string) => {
-    setFormData({ ...formData, projectId, assigneeId: "" });
+  // Priorizar projectId da URL, depois defaultProjectId
+  const initialProjectId = projectIdFromUrl || defaultProjectId;
 
-    // Buscar usuários do workspace do projeto selecionado
-    const selectedProject = projects.find((p) => p.id === projectId);
-    if (selectedProject) {
-      try {
-        const response = await fetch(`/api/workspaces/${selectedProject.workspace.id}/users`);
-        if (response.ok) {
-          const users = await response.json();
-          setWorkspaceUsers(users);
-        }
-      } catch (error) {
-        console.error("Erro ao buscar usuários do workspace:", error);
-      }
-    }
-  };
+  const [state, formAction] = useFormState<TaskFormState, FormData>(createTask, initialState);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.title.trim() || !formData.projectId) {
-      alert("Título e projeto são obrigatórios");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const result = await createTask({
-        title: formData.title,
-        description: formData.description || null,
-        status: formData.status,
-        priority: formData.priority,
-        dueDate: formData.dueDate || null,
-        projectId: formData.projectId,
-        assigneeId: formData.assigneeId || null,
-      });
-
-      if (result.success) {
-        router.push(`/tasks/${result.taskId}`);
+  useEffect(() => {
+    if (state?.success) {
+      // Se taskId estiver disponível, redirecionar para a tarefa criada
+      if (state.taskId) {
+        router.push(`/tasks/${state.taskId}`);
       } else {
-        alert("Erro ao criar tarefa");
+        // Caso contrário, redirecionar para a lista de tarefas
+        router.push("/tasks");
       }
-    } catch (error) {
-      console.error("Erro ao criar tarefa:", error);
-      alert("Erro ao criar tarefa");
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [state?.success, state?.taskId, router]);
 
   return (
     <div className='space-y-6'>
-      {/* Header */}
-      <div className='flex items-center gap-4'>
-        <Button variant='ghost' size='sm' onClick={() => router.back()}>
-          <ArrowLeft className='h-4 w-4 mr-2' />
+      <div className='flex items-center justify-between'>
+        <h1 className='text-3xl font-bold text-gray-900'>Nova Tarefa</h1>
+        <Button variant='outline' onClick={() => router.back()}>
           Voltar
         </Button>
-        <div>
-          <h1 className='text-2xl font-bold text-gray-900'>Nova Tarefa</h1>
-          <p className='text-gray-600'>Crie uma nova tarefa para organizar seu trabalho</p>
-        </div>
       </div>
 
-      {/* Form */}
-      <div className='max-w-2xl'>
-        <Card>
-          <CardHeader>
-            <CardTitle>Informações da Tarefa</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className='space-y-4'>
-              {/* Title */}
-              <div>
-                <Label htmlFor='title'>Título *</Label>
-                <Input
-                  id='title'
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder='Digite o título da tarefa'
-                  className='mt-1'
-                  required
-                />
+      <Card>
+        <CardHeader>
+          <CardTitle>Criar Nova Tarefa</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form action={formAction} className='space-y-4'>
+            <div>
+              <Label htmlFor='title'>Título</Label>
+              <Input id='title' name='title' placeholder='Digite o título da tarefa' required className='mt-1' />
+              {state?.errors?.title && <p className='mt-1 text-sm text-red-600'>{state.errors.title[0]}</p>}
+            </div>
+
+            <div>
+              <Label htmlFor='description'>Descrição (opcional)</Label>
+              <Textarea
+                id='description'
+                name='description'
+                placeholder='Descreva a tarefa em detalhes'
+                rows={3}
+                className='mt-1'
+              />
+              {state?.errors?.description && <p className='mt-1 text-sm text-red-600'>{state.errors.description[0]}</p>}
+            </div>
+
+            <div>
+              <Label htmlFor='projectId'>Projeto</Label>
+              <Select name='projectId' defaultValue={initialProjectId || undefined}>
+                <SelectTrigger className='mt-1'>
+                  <SelectValue placeholder='Selecione um projeto' />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.workspace.name} / {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {state?.errors?.projectId && <p className='mt-1 text-sm text-red-600'>{state.errors.projectId[0]}</p>}
+            </div>
+
+            {/* ✅ Campo de assignee (opcional) usando workspaceUsers */}
+            <div>
+              <Label htmlFor='assigneeId'>Atribuir para (opcional)</Label>
+              <Select name='assigneeId'>
+                <SelectTrigger className='mt-1'>
+                  <SelectValue placeholder='Nenhum usuário atribuído' />
+                </SelectTrigger>
+                <SelectContent>
+                  {workspaceUsers.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name || user.email.split("@")[0]} ({user.email})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor='priority'>Prioridade</Label>
+              <Select name='priority' defaultValue='MEDIUM'>
+                <SelectTrigger className='mt-1'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='LOW'>Baixa</SelectItem>
+                  <SelectItem value='MEDIUM'>Média</SelectItem>
+                  <SelectItem value='HIGH'>Alta</SelectItem>
+                  <SelectItem value='URGENT'>Urgente</SelectItem>
+                </SelectContent>
+              </Select>
+              {state?.errors?.priority && <p className='mt-1 text-sm text-red-600'>{state.errors.priority[0]}</p>}
+            </div>
+
+            <div>
+              <Label htmlFor='dueDate'>Data de Vencimento (opcional)</Label>
+              <Input id='dueDate' name='dueDate' type='date' className='mt-1' />
+              {state?.errors?.dueDate && <p className='mt-1 text-sm text-red-600'>{state.errors.dueDate[0]}</p>}
+            </div>
+
+            {state?.errors?._form && (
+              <div className='rounded-md bg-red-50 p-4'>
+                <p className='text-sm text-red-600'>{state.errors._form[0]}</p>
               </div>
+            )}
 
-              {/* Description */}
-              <div>
-                <Label htmlFor='description'>Descrição</Label>
-                <Textarea
-                  id='description'
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder='Descreva os detalhes da tarefa'
-                  className='mt-1'
-                  rows={4}
-                />
-              </div>
-
-              {/* Project */}
-              <div>
-                <Label htmlFor='project'>Projeto *</Label>
-                <Select value={formData.projectId} onValueChange={handleProjectChange} required>
-                  <SelectTrigger className='mt-1'>
-                    <SelectValue placeholder='Selecionar projeto' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {projects.map((project) => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.name} ({project.workspace.name})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Status and Priority */}
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                <div>
-                  <Label htmlFor='status'>Status</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value) => setFormData({ ...formData, status: value as TaskStatus })}>
-                    <SelectTrigger className='mt-1'>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(statusConfig).map(([key, config]) => (
-                        <SelectItem key={key} value={key}>
-                          {config.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor='priority'>Prioridade</Label>
-                  <Select
-                    value={formData.priority}
-                    onValueChange={(value) => setFormData({ ...formData, priority: value as TaskPriority })}>
-                    <SelectTrigger className='mt-1'>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(priorityConfig).map(([key, config]) => (
-                        <SelectItem key={key} value={key}>
-                          {config.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Due Date */}
-              <div>
-                <Label htmlFor='dueDate'>Prazo</Label>
-                <Input
-                  id='dueDate'
-                  type='date'
-                  value={formData.dueDate}
-                  onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                  className='mt-1'
-                />
-              </div>
-
-              {/* Assignee */}
-              {workspaceUsers.length > 0 && (
-                <div>
-                  <Label htmlFor='assignee'>Atribuir a</Label>
-                  <Select value={formData.assigneeId} onValueChange={(value) => setFormData({ ...formData, assigneeId: value })}>
-                    <SelectTrigger className='mt-1'>
-                      <SelectValue placeholder='Selecionar usuário' />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value=''>Não atribuir</SelectItem>
-                      {workspaceUsers.map((user) => (
-                        <SelectItem key={user.id} value={user.id}>
-                          {user.name || user.email}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {/* Submit Button */}
-              <div className='flex justify-end pt-4'>
-                <Button type='submit' disabled={isLoading}>
-                  <Save className='h-4 w-4 mr-2' />
-                  {isLoading ? "Criando..." : "Criar Tarefa"}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+            <SubmitButton />
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }
