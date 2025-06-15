@@ -28,7 +28,7 @@ export function CalendarView({ tasks, onTaskClick }: CalendarViewProps) {
 
   // Gerar dias do mês atual
   const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-  const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+  // const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
   const startDate = new Date(startOfMonth);
   startDate.setDate(startDate.getDate() - startOfMonth.getDay());
 

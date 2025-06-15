@@ -8,6 +8,7 @@ export interface Task {
   priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
   dueDate: Date | null;
   createdAt: Date;
+  updatedAt: Date; // Adicionado para corresponder ao schema do Prisma
   project: {
     name: string;
     workspace: {

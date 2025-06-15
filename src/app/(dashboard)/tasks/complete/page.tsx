@@ -17,7 +17,7 @@ interface CompleteTasksPageProps {
 export default function CompleteTasksPage({ initialTasks }: CompleteTasksPageProps) {
   const { filteredTasks, filters, updateFilter, clearFilters, stats, hasActiveFilters } = useTaskFilters(initialTasks);
 
-  const [selectedView, setSelectedView] = useState<"table" | "kanban" | "calendar">("kanban");
+  const [selectedView] = useState<"table" | "kanban" | "calendar">("kanban");
 
   const handleTaskClick = (task: Task) => {
     // Implementar navegação ou modal de detalhes
