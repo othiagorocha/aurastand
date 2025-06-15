@@ -1,9 +1,12 @@
-// src/app/(dashboard)/projects/[id]/page.tsx
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getTasksByProject } from "@/actions/task-actions";
-import { TaskList } from "@/features/tasks/components/task-list";
+import { ProjectHeader } from "@/features/projects/components/project-header";
+import { ProjectTaskStats } from "@/features/projects/components/project-task-stats";
+import { ProjectTasksClient } from "./project-tasks-client";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 interface ProjectDetailPageProps {
@@ -18,102 +21,78 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
     redirect("/login");
   }
 
-  const project = await db.project.findFirst({
-    where: {
-      id: params.id,
-      workspace: {
-        users: {
-          some: {
-            userId: user.id,
+  // ✅ Server-side data fetching
+  const [project, tasks] = await Promise.all([
+    db.project.findFirst({
+      where: {
+        id: params.id,
+        workspace: {
+          users: {
+            some: {
+              userId: user.id,
+            },
           },
         },
       },
-    },
-    include: {
-      workspace: {
-        select: {
-          name: true,
+      include: {
+        workspace: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+        _count: {
+          select: {
+            tasks: true,
+          },
         },
       },
-      _count: {
-        select: {
-          tasks: true,
-        },
-      },
-    },
-  });
+    }),
+    getTasksByProject(params.id),
+  ]);
 
   if (!project) {
     redirect("/projects");
   }
 
-  const tasks = await getTasksByProject(params.id);
-
-  const statusColors = {
-    ACTIVE: "bg-green-100 text-green-800",
-    INACTIVE: "bg-gray-100 text-gray-800",
-    ARCHIVED: "bg-red-100 text-red-800",
-  };
-
-  const priorityColors = {
-    LOW: "bg-gray-100 text-gray-800",
-    MEDIUM: "bg-blue-100 text-blue-800",
-    HIGH: "bg-orange-100 text-orange-800",
-    URGENT: "bg-red-100 text-red-800",
-  };
-
-  const statusLabels = {
-    ACTIVE: "Ativo",
-    INACTIVE: "Inativo",
-    ARCHIVED: "Arquivado",
-  };
-
-  const priorityLabels = {
-    LOW: "Baixa",
-    MEDIUM: "Média",
-    HIGH: "Alta",
-    URGENT: "Urgente",
-  };
-
   return (
     <div className='space-y-6'>
-      <div className='flex justify-between items-start'>
-        <div>
-          <nav className='text-sm text-gray-500 mb-2'>
-            <Link href='/workspaces' className='hover:text-gray-700'>
-              {project.workspace.name}
-            </Link>
-            {" / "}
-            <span className='text-gray-900'>{project.name}</span>
-          </nav>
-          <h1 className='text-3xl font-bold text-gray-900'>{project.name}</h1>
-          {project.description && <p className='text-gray-600 mt-2'>{project.description}</p>}
+      {/* ✅ Server-rendered navigation and header */}
+      <div className='flex items-center gap-4'>
+        <Button variant='ghost' size='sm' asChild>
+          <Link href={`/workspaces/${project.workspace.id}`} className='flex items-center gap-2'>
+            <ArrowLeft className='h-4 w-4' />
+            Voltar
+          </Link>
+        </Button>
 
-          <div className='flex items-center space-x-4 mt-3'>
-            <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                statusColors[project.status]
-              }`}>
-              {statusLabels[project.status]}
-            </span>
-            <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                priorityColors[project.priority]
-              }`}>
-              {priorityLabels[project.priority]}
-            </span>
-            <span className='text-sm text-gray-500'>{project._count.tasks} tarefas</span>
-          </div>
-        </div>
-        <Link href='/tasks/new' className='bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700'>
-          Nova Tarefa
-        </Link>
+        <nav className='text-sm text-gray-500'>
+          <Link href='/workspaces' className='hover:text-gray-700'>
+            Workspaces
+          </Link>
+          {" / "}
+          <Link href={`/workspaces/${project.workspace.id}`} className='hover:text-gray-700'>
+            {project.workspace.name}
+          </Link>
+          {" / "}
+          <span className='text-gray-900'>{project.name}</span>
+        </nav>
       </div>
 
-      <div>
-        <h2 className='text-xl font-semibold text-gray-900 mb-4'>Tarefas</h2>
-        <TaskList tasks={tasks} />
-      </div>
+      {/* ✅ Server-rendered project header */}
+      <ProjectHeader project={project} />
+
+      {/* ✅ Server-rendered task statistics */}
+      <ProjectTaskStats tasks={tasks} projectId={project.id} />
+
+      {/* ✅ Client component for interactive task visualization */}
+      <ProjectTasksClient initialTasks={tasks} projectId={project.id} projectName={project.name} />
     </div>
   );
 }

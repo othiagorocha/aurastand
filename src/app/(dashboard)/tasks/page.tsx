@@ -3,6 +3,7 @@ import { getAllTasks } from "@/actions/task-actions";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { TasksClientWrapper } from "./tasks-client-wrapper";
+import { TaskStats } from "@/features/tasks/components/task-stats";
 
 export default async function TasksPage() {
   const tasks = await getAllTasks();
