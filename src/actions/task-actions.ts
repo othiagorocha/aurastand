@@ -178,9 +178,11 @@ export async function getAllTasks() {
     include: {
       project: {
         select: {
+          id: true,
           name: true,
           workspace: {
             select: {
+              id: true,
               name: true,
             },
           },
@@ -217,9 +219,11 @@ export async function getTasksByProject(projectId: string) {
     include: {
       project: {
         select: {
+          id: true,
           name: true,
           workspace: {
             select: {
+              id: true,
               name: true,
             },
           },

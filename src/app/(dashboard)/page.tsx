@@ -2,6 +2,7 @@
 import { getAllWorkspaces } from "@/actions/workspace-actions";
 import { getAllProjects } from "@/actions/project-actions";
 import { getAllTasks } from "@/actions/task-actions";
+import { statusConfig } from "@/features/tasks/config/task-config";
 import Link from "next/link";
 
 export default async function DashboardPage() {
@@ -68,21 +69,9 @@ export default async function DashboardPage() {
                     </div>
                     <span
                       className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        {
-                          TODO: "bg-gray-100 text-gray-800",
-                          IN_PROGRESS: "bg-blue-100 text-blue-800",
-                          IN_REVIEW: "bg-yellow-100 text-yellow-800",
-                          DONE: "bg-green-100 text-green-800",
-                        }[task.status]
+                        statusConfig[task.status].color
                       }`}>
-                      {
-                        {
-                          TODO: "A fazer",
-                          IN_PROGRESS: "Em andamento",
-                          IN_REVIEW: "Em revisão",
-                          DONE: "Concluída",
-                        }[task.status]
-                      }
+                      {statusConfig[task.status].label}
                     </span>
                   </div>
                 ))}
