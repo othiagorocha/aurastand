@@ -3,7 +3,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { statusConfig, statusOrder } from "../config/task-config";
-import { TaskViewProps, Task } from "../types";
+import { TaskViewProps, Task, TaskStatus } from "../types";
 import { TaskCard } from "./task-card";
 
 interface KanbanViewProps extends TaskViewProps {
@@ -12,8 +12,8 @@ interface KanbanViewProps extends TaskViewProps {
 
 export function KanbanView({ tasks, onTaskClick }: KanbanViewProps) {
   return (
-    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
-      {statusOrder.map((status) => {
+    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6'>
+      {statusOrder.map((status: TaskStatus) => {
         const columnTasks = tasks.filter((task) => task.status === status);
 
         return (

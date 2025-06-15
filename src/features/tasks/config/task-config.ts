@@ -1,62 +1,98 @@
 // src/features/tasks/config/task-config.ts
-import { TaskStatus, TaskPriority } from "../types";
+import {
+  Circle,
+  Clock,
+  AlertCircle,
+  CheckCircle2,
+  CircleDashed,
+  // CircleIcon,
+  // CircleDotDashed,
+  // CircleDot,
+  // CircleCheck
+} from "lucide-react";
+import { StatusConfig, PriorityConfig, TaskStatus, TaskPriority } from "../types";
 
-export const statusConfig: Record<TaskStatus, { label: string; color: string; textColor: string; bgColor: string }> = {
-  BACKLOG: {
+export const statusConfig: Record<TaskStatus, StatusConfig> = {
+  [TaskStatus.BACKLOG]: {
     label: "Backlog",
-    color: "bg-gray-500",
+    color: "border-gray-500",
     textColor: "text-gray-700",
     bgColor: "bg-gray-100",
+    icon: CircleDashed,
   },
-  TODO: {
-    label: "Para Fazer",
-    color: "bg-blue-500",
+  [TaskStatus.TODO]: {
+    label: "A fazer",
+    color: "border-blue-500",
     textColor: "text-blue-700",
     bgColor: "bg-blue-100",
+    icon: Circle,
   },
-  IN_PROGRESS: {
-    label: "Em Progresso",
-    color: "bg-yellow-500",
+  [TaskStatus.IN_PROGRESS]: {
+    label: "Em andamento",
+    color: "border-yellow-500",
     textColor: "text-yellow-700",
     bgColor: "bg-yellow-100",
+    icon: Clock,
   },
-  IN_REVIEW: {
-    label: "Em Revisão",
-    color: "bg-purple-500",
+  [TaskStatus.IN_REVIEW]: {
+    label: "Em revisão",
+    color: "border-purple-500",
     textColor: "text-purple-700",
     bgColor: "bg-purple-100",
+    icon: AlertCircle,
   },
-  DONE: {
-    label: "Concluído",
-    color: "bg-green-500",
+  [TaskStatus.DONE]: {
+    label: "Concluída",
+    color: "border-green-500",
     textColor: "text-green-700",
     bgColor: "bg-green-100",
+    icon: CheckCircle2,
   },
 };
 
-export const priorityConfig: Record<TaskPriority, { label: string; color: string; textColor: string; bgColor: string }> = {
-  LOW: {
+export const priorityConfig: Record<TaskPriority, PriorityConfig> = {
+  [TaskPriority.LOW]: {
     label: "Baixa",
-    color: "bg-gray-500",
-    textColor: "text-gray-700",
-    bgColor: "bg-gray-100",
+    color: "bg-gray-100 text-gray-800",
   },
-  MEDIUM: {
+  [TaskPriority.MEDIUM]: {
     label: "Média",
-    color: "bg-blue-500",
-    textColor: "text-blue-700",
-    bgColor: "bg-blue-100",
+    color: "bg-blue-100 text-blue-800",
   },
-  HIGH: {
+  [TaskPriority.HIGH]: {
     label: "Alta",
-    color: "bg-orange-500",
-    textColor: "text-orange-700",
-    bgColor: "bg-orange-100",
+    color: "bg-orange-100 text-orange-800",
   },
-  URGENT: {
+  [TaskPriority.URGENT]: {
     label: "Urgente",
-    color: "bg-red-500",
-    textColor: "text-red-700",
-    bgColor: "bg-red-100",
+    color: "bg-red-100 text-red-800",
   },
 };
+
+// Ordem dos status para o kanban e outras visualizações
+export const statusOrder: TaskStatus[] = [
+  TaskStatus.BACKLOG,
+  TaskStatus.TODO,
+  TaskStatus.IN_PROGRESS,
+  TaskStatus.IN_REVIEW,
+  TaskStatus.DONE,
+];
+
+// Nomes dos meses para o calendário
+export const monthNames = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+];
+
+// Nomes dos dias para o calendário
+export const dayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];

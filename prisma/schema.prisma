@@ -19,10 +19,11 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relacionamentos
-  workspaces WorkspaceUser[]
-  projects   Project[]
-  tasks      Task[]
-  comments   Comment[]
+  workspaces    WorkspaceUser[]
+  projects      Project[]
+  tasks         Task[]
+  assignedTasks Task[]          @relation("TaskAssignee")
+  comments      Comment[]
 
   @@map("users")
 }
@@ -63,6 +64,7 @@ model Project {
   priority    Priority  @default(MEDIUM)
   startDate   DateTime?
   endDate     DateTime?
+  imageUrl    String? // Adicionado para compatibilidade com componentes
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   workspaceId String
@@ -82,16 +84,18 @@ model Task {
   description String?
   status      TaskStatus @default(TODO)
   priority    Priority   @default(MEDIUM)
+  position    Int        @default(0) // Adicionado para ordenação no kanban
   dueDate     DateTime?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   projectId   String
-  userId      String
-  assigneeId  String?
+  userId      String // Criador da tarefa
+  assigneeId  String? // Pessoa atribuída à tarefa
 
   // Relacionamentos
   project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user     User      @relation(fields: [userId], references: [id])
+  assignee User?     @relation("TaskAssignee", fields: [assigneeId], references: [id])
   comments Comment[]
 
   @@map("tasks")
@@ -125,6 +129,7 @@ enum Status {
 }
 
 enum TaskStatus {
+  BACKLOG // Adicionado para compatibilidade com kanban
   TODO
   IN_PROGRESS
   IN_REVIEW

@@ -4,7 +4,7 @@
 import { useState, useMemo } from "react";
 import { Task, TaskStatus, TaskPriority, FilterStats } from "../types";
 
-// Tipos para os filtros
+// Tipos mais específicos para os filtros
 interface FilterOptions {
   status?: TaskStatus[];
   priority?: TaskPriority[];
@@ -17,8 +17,10 @@ interface FilterOptions {
   };
 }
 
+// Tipo para as chaves dos filtros que podem ser atualizadas
 type FilterKey = keyof FilterOptions;
 
+// Tipo para os valores que cada filtro pode receber
 type FilterValue<K extends FilterKey> = K extends "status"
   ? TaskStatus[]
   : K extends "priority"
@@ -49,7 +51,7 @@ export function useTaskFilters(tasks: Task[]) {
         const searchLower = filters.searchTerm.toLowerCase();
         const titleMatch = task.title.toLowerCase().includes(searchLower);
         const descriptionMatch = task.description?.toLowerCase().includes(searchLower);
-        const projectMatch = task.project?.name?.toLowerCase().includes(searchLower);
+        const projectMatch = task.project.name.toLowerCase().includes(searchLower);
 
         if (!titleMatch && !descriptionMatch && !projectMatch) return false;
       }
@@ -68,13 +70,8 @@ export function useTaskFilters(tasks: Task[]) {
       if (filters.dueDateRange) {
         if (!task.dueDate) return false;
 
-        if (filters.dueDateRange.start && task.dueDate < filters.dueDateRange.start) {
-          return false;
-        }
-
-        if (filters.dueDateRange.end && task.dueDate > filters.dueDateRange.end) {
-          return false;
-        }
+        if (filters.dueDateRange.start && task.dueDate < filters.dueDateRange.start) return false;
+        if (filters.dueDateRange.end && task.dueDate > filters.dueDateRange.end) return false;
       }
 
       return true;
@@ -100,9 +97,10 @@ export function useTaskFilters(tasks: Task[]) {
     });
   };
 
-  // Estatísticas dos filtros
-  const stats: FilterStats = useMemo(
-    () => ({
+  const hasActiveFilters = Object.keys(filters).length > 0;
+
+  const stats: FilterStats = useMemo(() => {
+    return {
       total: tasks.length,
       filtered: filteredTasks.length,
       byStatus: {
@@ -118,9 +116,8 @@ export function useTaskFilters(tasks: Task[]) {
         [TaskPriority.HIGH]: filteredTasks.filter((t) => t.priority === TaskPriority.HIGH).length,
         [TaskPriority.URGENT]: filteredTasks.filter((t) => t.priority === TaskPriority.URGENT).length,
       },
-    }),
-    [tasks, filteredTasks]
-  );
+    };
+  }, [filteredTasks, tasks]);
 
   return {
     filteredTasks,
@@ -128,7 +125,7 @@ export function useTaskFilters(tasks: Task[]) {
     updateFilter,
     clearFilters,
     clearFilter,
+    hasActiveFilters,
     stats,
-    hasActiveFilters: Object.keys(filters).length > 0,
   };
 }

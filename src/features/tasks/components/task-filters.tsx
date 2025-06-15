@@ -11,10 +11,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Search, Filter, X, CalendarIcon, ChevronDown } from "lucide-react";
-import { TaskStatus, TaskPriority, FilterStats } from "../types";
 import { statusConfig, priorityConfig } from "../config/task-config";
+import { TaskStatus, TaskPriority, FilterStats } from "../types";
 
-export interface TaskFiltersProps {
+interface TaskFiltersProps {
   searchTerm?: string;
   onSearchChange: (term: string) => void;
   selectedStatuses?: TaskStatus[];
@@ -69,19 +69,14 @@ export function TaskFilters({
     <Card className='w-full'>
       <CardHeader className='pb-3'>
         <div className='flex items-center justify-between'>
-          <CardTitle className='text-lg font-medium flex items-center gap-2'>
+          <CardTitle className='flex items-center gap-2'>
             <Filter className='h-4 w-4' />
             Filtros
-            {stats && (
-              <Badge variant='secondary' className='ml-2'>
-                {stats.filtered} de {stats.total}
-              </Badge>
-            )}
           </CardTitle>
           <div className='flex items-center gap-2'>
             {hasActiveFilters && (
-              <Button variant='ghost' size='sm' onClick={onClearFilters} className='text-red-600 hover:text-red-700'>
-                <X className='h-4 w-4 mr-1' />
+              <Button variant='outline' size='sm' onClick={onClearFilters}>
+                <X className='h-3 w-3 mr-1' />
                 Limpar
               </Button>
             )}
@@ -90,135 +85,106 @@ export function TaskFilters({
             </Button>
           </div>
         </div>
+
+        {stats && (
+          <div className='flex items-center gap-4 text-sm text-gray-600'>
+            <span>Total: {stats.total}</span>
+            <span>Filtrado: {stats.filtered}</span>
+          </div>
+        )}
       </CardHeader>
 
       <CardContent className='space-y-4'>
         {/* Busca */}
-        <div className='relative'>
-          <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400' />
-          <Input
-            type='text'
-            placeholder='Buscar tarefas...'
-            value={searchTerm}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className='pl-10'
-          />
+        <div className='space-y-2'>
+          <Label htmlFor='search'>Buscar tarefas</Label>
+          <div className='relative'>
+            <Search className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400' />
+            <Input
+              id='search'
+              placeholder='Digite para buscar...'
+              value={searchTerm}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className='pl-9'
+            />
+          </div>
         </div>
 
         {isExpanded && (
           <>
             {/* Status */}
-            <div className='space-y-2'>
-              <Label className='text-sm font-medium'>Status</Label>
+            <div className='space-y-3'>
+              <Label>Status</Label>
               <div className='flex flex-wrap gap-2'>
                 {Object.entries(statusConfig).map(([status, config]) => (
-                  <div
-                    key={status}
-                    className='flex items-center space-x-2 cursor-pointer'
-                    onClick={() => handleStatusToggle(status as TaskStatus)}>
-                    <Checkbox checked={selectedStatuses.includes(status as TaskStatus)} onChange={() => {}} />
-                    <div className='flex items-center gap-2'>
-                      <div className={`w-3 h-3 rounded-full ${config.color}`} />
-                      <span className='text-sm'>{config.label}</span>
-                      {stats && (
-                        <Badge variant='outline' className='text-xs'>
-                          {stats.byStatus[status as TaskStatus] || 0}
-                        </Badge>
-                      )}
-                    </div>
+                  <div key={status} className='flex items-center space-x-2'>
+                    <Checkbox
+                      id={`status-${status}`}
+                      checked={selectedStatuses.includes(status as TaskStatus)}
+                      onCheckedChange={() => handleStatusToggle(status as TaskStatus)}
+                    />
+                    <Label htmlFor={`status-${status}`} className='text-sm font-normal cursor-pointer'>
+                      <Badge variant='secondary' className={config.color}>
+                        {config.label}
+                        {stats && ` (${stats.byStatus[status as TaskStatus] || 0})`}
+                      </Badge>
+                    </Label>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Prioridade */}
-            <div className='space-y-2'>
-              <Label className='text-sm font-medium'>Prioridade</Label>
+            <div className='space-y-3'>
+              <Label>Prioridade</Label>
               <div className='flex flex-wrap gap-2'>
                 {Object.entries(priorityConfig).map(([priority, config]) => (
-                  <div
-                    key={priority}
-                    className='flex items-center space-x-2 cursor-pointer'
-                    onClick={() => handlePriorityToggle(priority as TaskPriority)}>
-                    <Checkbox checked={selectedPriorities.includes(priority as TaskPriority)} onChange={() => {}} />
-                    <div className='flex items-center gap-2'>
-                      <div className={`w-3 h-3 rounded-full ${config.color}`} />
-                      <span className='text-sm'>{config.label}</span>
-                      {stats && (
-                        <Badge variant='outline' className='text-xs'>
-                          {stats.byPriority[priority as TaskPriority] || 0}
-                        </Badge>
-                      )}
-                    </div>
+                  <div key={priority} className='flex items-center space-x-2'>
+                    <Checkbox
+                      id={`priority-${priority}`}
+                      checked={selectedPriorities.includes(priority as TaskPriority)}
+                      onCheckedChange={() => handlePriorityToggle(priority as TaskPriority)}
+                    />
+                    <Label htmlFor={`priority-${priority}`} className='text-sm font-normal cursor-pointer'>
+                      <Badge variant='secondary' className={config.color}>
+                        {config.label}
+                        {stats && ` (${stats.byPriority[priority as TaskPriority] || 0})`}
+                      </Badge>
+                    </Label>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Data de Vencimento */}
-            <div className='space-y-2'>
-              <Label className='text-sm font-medium'>Data de Vencimento</Label>
+            {/* Data de vencimento */}
+            <div className='space-y-3'>
+              <Label>Data de vencimento</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant='outline' className='w-full justify-start'>
+                  <Button variant='outline' className='w-full justify-start text-left font-normal'>
                     <CalendarIcon className='mr-2 h-4 w-4' />
                     {formatDateRange()}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className='w-auto p-0' align='start'>
-                  <div className='p-3 space-y-3'>
-                    <div>
-                      <Label className='text-sm'>Data de início</Label>
-                      <Calendar
-                        mode='single'
-                        selected={dueDateRange?.start}
-                        onSelect={(date) =>
-                          onDateRangeChange({
-                            start: date,
-                            end: dueDateRange?.end,
-                          })
-                        }
-                      />
-                    </div>
-                    <div>
-                      <Label className='text-sm'>Data de fim</Label>
-                      <Calendar
-                        mode='single'
-                        selected={dueDateRange?.end}
-                        onSelect={(date) =>
-                          onDateRangeChange({
-                            start: dueDateRange?.start,
-                            end: date,
-                          })
-                        }
-                      />
-                    </div>
-                    <Button variant='outline' size='sm' onClick={() => onDateRangeChange({})} className='w-full'>
-                      Limpar datas
-                    </Button>
-                  </div>
+                  <Calendar
+                    mode='range'
+                    selected={{
+                      from: dueDateRange?.start,
+                      to: dueDateRange?.end,
+                    }}
+                    onSelect={(range) => {
+                      onDateRangeChange({
+                        start: range?.from,
+                        end: range?.to,
+                      });
+                    }}
+                    initialFocus
+                  />
                 </PopoverContent>
               </Popover>
             </div>
           </>
-        )}
-
-        {/* Filtros Ativos */}
-        {hasActiveFilters && (
-          <div className='flex flex-wrap gap-2 pt-2 border-t'>
-            {selectedStatuses.map((status) => (
-              <Badge key={status} variant='secondary' className='cursor-pointer'>
-                {statusConfig[status].label}
-                <X className='h-3 w-3 ml-1' onClick={() => handleStatusToggle(status)} />
-              </Badge>
-            ))}
-            {selectedPriorities.map((priority) => (
-              <Badge key={priority} variant='secondary' className='cursor-pointer'>
-                {priorityConfig[priority].label}
-                <X className='h-3 w-3 ml-1' onClick={() => handlePriorityToggle(priority)} />
-              </Badge>
-            ))}
-          </div>
         )}
       </CardContent>
     </Card>
